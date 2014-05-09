@@ -41,7 +41,7 @@ public class LoginControllerTest {
 		userController = Mvcs.getIoc().get(UserController.class);
 		user = new User();
 		user.setName("roy");
-		user.setPassword("roy");
+		user.setPassword("topcat");
 	}
 
 	@After
@@ -52,7 +52,7 @@ public class LoginControllerTest {
 	public void testLogin() {
 		Map<String, String> msg = userController.regist(user);
 		assertEquals("user 'roy' registed", msg.get("message"));
-		user.setPassword("roy");
+		user.setPassword("topcat");
 		HttpSession session = mock(HttpSession.class);
 		loginController.login(user, true, session);
 		Subject currentUser = ShiroUtils.getSubject();
