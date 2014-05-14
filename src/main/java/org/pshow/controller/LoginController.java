@@ -16,11 +16,12 @@ import org.apache.shiro.authc.UnknownAccountException;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 import org.nutz.ioc.loader.annotation.IocBean;
-import org.nutz.mvc.View;
+import org.nutz.mvc.adaptor.JsonAdaptor;
+import org.nutz.mvc.annotation.AdaptBy;
 import org.nutz.mvc.annotation.At;
+import org.nutz.mvc.annotation.Fail;
+import org.nutz.mvc.annotation.Ok;
 import org.nutz.mvc.annotation.Param;
-import org.nutz.mvc.view.ForwardView;
-import org.nutz.mvc.view.ViewWrapper;
 import org.pshow.common.ShiroUtils;
 import org.pshow.domain.User;
 
@@ -30,64 +31,35 @@ public class LoginController {
 
 	public static final String JCR_SESSION = "jcr_session";
 
-	public View login(@Param("..") User user, boolean remeberMe,
-			HttpSession session) {
+	@At
+	@Ok("json")
+	@Fail("json")
+	public User login(@Param("..") User user, boolean remeberMe,
+			HttpSession session) throws LoginException, RepositoryException {
 		Subject currentUser = ShiroUtils.getSubject();
 		if (!currentUser.isAuthenticated()) {
 			UsernamePasswordToken token = new UsernamePasswordToken(
 					user.getName(), user.getPassword());
 			token.setRememberMe(remeberMe);
-			try {
-				currentUser.login(token);
-				session.setAttribute(JCR_SESSION, loginToJcr(user));
-				// if no exception, that's it, we're done!
-				return new ViewWrapper(new ForwardView("/index.jsp"), "welcome");
-			} catch (UnknownAccountException e) {
-				// username wasn't in the system, show them an error message?
-				e.printStackTrace();
-				return new ViewWrapper(new ForwardView("/index.jsp"),
-						e.getMessage());
-			} catch (IncorrectCredentialsException e) {
-				// password didn't match, try again?
-				e.printStackTrace();
-				return new ViewWrapper(new ForwardView("/index.jsp"),
-						e.getMessage());
-			} catch (LockedAccountException e) {
-				// account for that username is locked - can't login. Show them
-				// a message?
-				e.printStackTrace();
-				return new ViewWrapper(new ForwardView("/index.jsp"),
-						e.getMessage());
-			} catch (AuthenticationException e) {
-				// unexpected condition - error?
-				e.printStackTrace();
-				return new ViewWrapper(new ForwardView("/index.jsp"),
-						e.getMessage());
-			} catch (LoginException e) {
-				e.printStackTrace();
-				return new ViewWrapper(new ForwardView("/index.jsp"),
-						e.getMessage());
-			} catch (RepositoryException e) {
-				e.printStackTrace();
-				return new ViewWrapper(new ForwardView("/index.jsp"),
-						e.getMessage());
-			}
+			currentUser.login(token);
+			session.setAttribute(JCR_SESSION, loginToJcr(user));
 		}
-		return new ViewWrapper(new ForwardView("/index.jsp"), "");
+		return user;
 	}
 
 	private Session loginToJcr(User user) throws LoginException,
 			RepositoryException {
 		Repository repository = JcrUtils.getRepository();
 		Session session = repository.login(new SimpleCredentials(
-				user.getName(), user.getPassword().toCharArray()));
+				user.getName(), "admin".equals(user.getName()) ? "admin"
+						.toCharArray() : user.getPassword().toCharArray()));
 		return session;
 	}
 
 	public void logout(HttpSession session) {
 		Subject currentUser = SecurityUtils.getSubject();
 		if (currentUser.isAuthenticated()) {
-			Session jcrSession = (Session)session.getAttribute(JCR_SESSION);
+			Session jcrSession = (Session) session.getAttribute(JCR_SESSION);
 			if (jcrSession != null) {
 				jcrSession.logout();
 			}
