@@ -66,6 +66,11 @@
 			<artifactId>nutz</artifactId>
 			<version>1.b.50</version>
 		</dependency>
+		<dependency>
+			<groupId>org.nutz</groupId>
+			<artifactId>nutz-web</artifactId>
+			<version>1.b.49</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.commons</groupId>

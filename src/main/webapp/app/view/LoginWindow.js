@@ -2,7 +2,7 @@ Ext.define('ECM.view.LoginWindow', {
 	extend : 'Ext.Window',
 	alias : 'widget.loginwindow',
 
-	title : 'Please login',
+	title : '请登陆',
 	width : 400,
 	autoHeight : true,
 	closable : false,
@@ -22,16 +22,20 @@ Ext.define('ECM.view.LoginWindow', {
 				border : 0,
 				bodyPadding : 5,
 				items : [{
-					itemId : 'userName',
+					xtype: 'label',
+					itemId : 'msg',
+					text: '',
+					margin: '0 0 5 0'
+				},{
 					xtype : 'textfield',
-					fieldLabel : 'Username',
+					fieldLabel : '用户名',
 					name : 'name',
 					allowBlank : false,
 					anchor : '100%',
 					selectOnFocus : true
 				}, {
 					xtype : 'textfield',
-					fieldLabel : 'Password',
+					fieldLabel : '密码',
 					name : 'password',
 					allowBlank : false,
 					inputType : 'password',

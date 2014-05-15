@@ -35,6 +35,7 @@ Ext.define('ECM.controller.LoginController', {
 		console.log(values);
 		var _this = this;
 
+		Ext.MessageBox.wait("正在登陆中", "提示");
 		Ext.Ajax.request({
 			url : 'auth/login',
 			method: 'POST',
@@ -48,9 +49,13 @@ Ext.define('ECM.controller.LoginController', {
 					lay.setActiveItem(1);
 					win.hide();
 				}
+				 Ext.MessageBox.hide();
 			},
 			failure : function(response, opts) {
+				var result = Ext.decode(response.responseText);
+				form.getComponent('msg').setText(result.data)
 				console.log('server-side failure with status code ' + response.status);
+				 Ext.MessageBox.hide();
 			}
 		});
 	},

@@ -9,15 +9,9 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.AuthenticationException;
-import org.apache.shiro.authc.IncorrectCredentialsException;
-import org.apache.shiro.authc.LockedAccountException;
-import org.apache.shiro.authc.UnknownAccountException;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 import org.nutz.ioc.loader.annotation.IocBean;
-import org.nutz.mvc.adaptor.JsonAdaptor;
-import org.nutz.mvc.annotation.AdaptBy;
 import org.nutz.mvc.annotation.At;
 import org.nutz.mvc.annotation.Fail;
 import org.nutz.mvc.annotation.Ok;
@@ -33,7 +27,7 @@ public class LoginController {
 
 	@At
 	@Ok("json")
-	@Fail("json")
+	@Fail("exception:403")
 	public User login(@Param("..") User user, boolean remeberMe,
 			HttpSession session) throws LoginException, RepositoryException {
 		Subject currentUser = ShiroUtils.getSubject();
