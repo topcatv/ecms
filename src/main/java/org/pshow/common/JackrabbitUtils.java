@@ -9,11 +9,25 @@ import javax.jcr.SimpleCredentials;
 import org.apache.jackrabbit.commons.JcrUtils;
 
 public class JackrabbitUtils {
+	private static Repository repository;
+	private static Session manageSession;
 
-	public static Session getManageSession() throws LoginException, RepositoryException{
-		Repository repository = JcrUtils.getRepository();
-		Session session = repository.login(new SimpleCredentials("admin", "admin"
-				.toCharArray()));
-		return session;
+	public static synchronized Session getManageSession()
+			throws LoginException, RepositoryException {
+		if (manageSession == null || !manageSession.isLive()) {
+			if (repository == null) {
+				repository = JcrUtils.getRepository();
+			}
+			manageSession = repository.login(new SimpleCredentials("admin",
+					"admin".toCharArray()));
+		}
+		return manageSession;
+	}
+	
+	public static Repository getRepository() throws RepositoryException{
+		if (repository == null) {
+			repository = JcrUtils.getRepository();
+		}
+		return repository;
 	}
 }

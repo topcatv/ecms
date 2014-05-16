@@ -10,13 +10,17 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.http.HttpSession;
 
+import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.shiro.subject.Subject;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.nutz.mvc.Mvcs;
+import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.ShiroUtils;
 import org.pshow.domain.User;
+import org.pshow.service.UserService;
 
 public class LoginControllerTest extends BaseTest {
 
@@ -35,7 +39,13 @@ public class LoginControllerTest extends BaseTest {
 
 	@After
 	public void tearDown() throws Exception {
-		
+	}
+	
+	@AfterClass
+	public static void tearAferClassDown() throws Exception {
+		JackrabbitUtils.getManageSession().logout();
+		JackrabbitRepository repository = (JackrabbitRepository)JackrabbitUtils.getRepository();
+		repository.shutdown();
 	}
 	
 	@Test
@@ -44,7 +54,7 @@ public class LoginControllerTest extends BaseTest {
 		assertEquals("user 'roy' registed", msg.get("message"));
 		user.setPassword("topcat");
 		HttpSession session = mock(HttpSession.class);
-		loginController.login(user, true, session);
+		loginController.login(user, session);
 		Subject currentUser = ShiroUtils.getSubject();
 		assertTrue(currentUser.isAuthenticated());
 		msg = userController.unregist(user);
@@ -55,7 +65,7 @@ public class LoginControllerTest extends BaseTest {
 	public void testLogout() {
 		HttpSession session = mock(HttpSession.class);
 		Session jcrSession = mock(Session.class);
-		when(session.getAttribute(LoginController.JCR_SESSION)).thenReturn(jcrSession);
+		when(session.getAttribute(UserService.JCR_SESSION)).thenReturn(jcrSession);
 		loginController.logout(session);
 		verify(jcrSession, times(1)).logout();
 		Subject currentUser = ShiroUtils.getSubject();

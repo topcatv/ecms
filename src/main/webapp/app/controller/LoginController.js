@@ -1,5 +1,6 @@
 Ext.define('ECM.controller.LoginController', {
 	extend : 'Ext.app.Controller',
+	views : ['LoginWindow'],
 
 	init : function() {
 		this.control({
@@ -37,25 +38,22 @@ Ext.define('ECM.controller.LoginController', {
 
 		Ext.MessageBox.wait("正在登陆中", "提示");
 		Ext.Ajax.request({
-			url : 'auth/login',
-			method: 'POST',
+			//			url : 'auth/login',
+			//			method : 'POST',
+			url : 'data/users.json',
+			method : 'GET',
 			params : values,
 			success : function(response, opts) {
-				var result = Ext.decode(response.responseText);
-				if(result.detailMessage){
-					alert(result.detailMessage);
-				}else{
-					var lay = _this.getMainview().getLayout();
-					lay.setActiveItem(1);
-					win.hide();
-				}
-				 Ext.MessageBox.hide();
+				var lay = _this.getMainview().getLayout();
+				lay.setActiveItem(1);
+				win.hide();
+				Ext.MessageBox.hide();
 			},
 			failure : function(response, opts) {
 				var result = Ext.decode(response.responseText);
 				form.getComponent('msg').setText(result.data)
 				console.log('server-side failure with status code ' + response.status);
-				 Ext.MessageBox.hide();
+				Ext.MessageBox.hide();
 			}
 		});
 	},
