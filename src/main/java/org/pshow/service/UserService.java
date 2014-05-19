@@ -22,6 +22,7 @@ import org.nutz.dao.Dao;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.lang.Lang;
 import org.nutz.lang.Times;
+import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.ShiroUtils;
 import org.pshow.common.page.Pagination;
 import org.pshow.domain.Role;
@@ -29,7 +30,6 @@ import org.pshow.domain.User;
 
 @IocBean(args = { "refer:dao" })
 public class UserService extends BaseService<User> {
-	public static final String JCR_SESSION = "jcr_session";
 
 	public UserService(Dao dao) {
 		super(dao);
@@ -42,7 +42,7 @@ public class UserService extends BaseService<User> {
 					user.getName(), user.getPassword());
 			token.setRememberMe(false);
 			currentUser.login(token);
-			session.setAttribute(JCR_SESSION, loginToJcr(user));
+			session.setAttribute(JackrabbitUtils.JCR_SESSION, loginToJcr(user));
 		}
 		return user;
 	}

@@ -62,10 +62,12 @@ public class JCRManageControllerTest extends BaseTest {
 			try {
 				jcrManageController.registNamespace(namespace);
 			} catch (NamespaceException e) {
+				e.printStackTrace();
 			}
 			try {
 				jcrManageController.registNodeType(nodeTypeName, properties);
 			} catch (NodeTypeExistsException e) {
+				e.printStackTrace();
 			}
 			Session manageSession = JackrabbitUtils.getManageSession();
 			NodeTypeManager nodeTypeManager = manageSession.getWorkspace().getNodeTypeManager();

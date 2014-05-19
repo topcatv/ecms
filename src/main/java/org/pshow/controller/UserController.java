@@ -25,6 +25,7 @@ public class UserController {
 	@Inject
 	private UserService userService;
 
+	@At
 	public Map<String, String> regist(final User user) {
 		final Map<String, String> msgs = new Hashtable<String, String>();
 		if (userService.fetchByName(user.getName()) != null) {
@@ -56,6 +57,7 @@ public class UserController {
 		return msgs;
 	}
 
+	@At
 	public Map<String, String> unregist(final User user) {
 
 		final Map<String, String> msgs = new Hashtable<String, String>();

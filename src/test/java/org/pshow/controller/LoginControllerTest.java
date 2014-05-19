@@ -20,7 +20,6 @@ import org.nutz.mvc.Mvcs;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.ShiroUtils;
 import org.pshow.domain.User;
-import org.pshow.service.UserService;
 
 public class LoginControllerTest extends BaseTest {
 
@@ -65,7 +64,7 @@ public class LoginControllerTest extends BaseTest {
 	public void testLogout() {
 		HttpSession session = mock(HttpSession.class);
 		Session jcrSession = mock(Session.class);
-		when(session.getAttribute(UserService.JCR_SESSION)).thenReturn(jcrSession);
+		when(session.getAttribute(JackrabbitUtils.JCR_SESSION)).thenReturn(jcrSession);
 		loginController.logout(session);
 		verify(jcrSession, times(1)).logout();
 		Subject currentUser = ShiroUtils.getSubject();

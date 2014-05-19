@@ -3,8 +3,7 @@ Ext.application({
 	name : 'ECM',
 
 	appFolder : 'app',
-	requires: ['ECM.view.Main'],
-	controllers : ['LoginController', 'ContentTree', 'Users'],
+	controllers : ['LoginController', 'Content'],
 
 	launch : function() {
 		Ext.create('ECM.view.LoginWindow', {}).show();

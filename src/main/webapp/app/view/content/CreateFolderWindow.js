@@ -1,16 +1,17 @@
-Ext.define('ECM.view.LoginWindow', {
+Ext.define('ECM.view.content.CreateFolderWindow', {
 	extend : 'Ext.Window',
-	alias : 'widget.loginwindow',
+	alias : 'widget.create_folder_window',
 
-	title : '请登陆',
+	title : '创建文件夹',
 	width : 400,
 	autoHeight : true,
-	closable : false,
+	closable : true,
+	closeAction : 'hide',
 	resizable : false,
-	draggable : false,
+	draggable : true,
 	autoHeight : true,
 	layout : 'fit',
-	border : false,
+	border : true,
 	modal : true,
 
 	initComponent : function() {
@@ -22,20 +23,18 @@ Ext.define('ECM.view.LoginWindow', {
 				border : 0,
 				bodyPadding : 5,
 				items : [{
-					xtype : 'textfield',
-					fieldLabel : '用户名',
-					value: 'admin',
-					name : 'name',
-					allowBlank : false,
-					anchor : '100%',
-					selectOnFocus : true
+					xtype : 'label',
+					itemId : 'msg',
+					text : '',
+					margin : '0 0 5 0'
+				}, {
+					xtype : 'hiddenfield',
+					name : 'parent'
 				}, {
 					xtype : 'textfield',
-					fieldLabel : '密码',
-					name : 'password',
-					value: '123',
+					fieldLabel : '文件夹名',
+					name : 'name',
 					allowBlank : false,
-					inputType : 'password',
 					anchor : '100%',
 					selectOnFocus : true
 				}],
@@ -45,10 +44,10 @@ Ext.define('ECM.view.LoginWindow', {
 	},
 
 	buttons : [{
-		text : "登陆",
+		text : "创建",
 		type : "submit",
-		action : "login",
-		formBind : true,
+		action : "create",
+		formBind : true
 	}],
-	defaultFocus : 'userName',
-});
+	defaultFocus : 'name'
+}); 

@@ -17,7 +17,6 @@ import javax.jcr.nodetype.PropertyDefinitionTemplate;
 
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.mvc.annotation.At;
-import org.nutz.mvc.annotation.Ok;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.domain.Namespace;
 import org.pshow.domain.PropertyDef;
@@ -27,7 +26,7 @@ import org.pshow.domain.PropertyDef;
 public class JCRManageController {
 
 	@SuppressWarnings("unchecked")
-	@Ok("json")
+	@At
 	public void registNodeType(String nodeTypeName, List<PropertyDef> properties) throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException, RepositoryException{
 		Session manageSession = JackrabbitUtils.getManageSession();
 		
@@ -55,6 +54,7 @@ public class JCRManageController {
 		manageSession.save();
 	}
 	
+	@At
 	public void registNamespace(Namespace namespace) throws AccessDeniedException, NamespaceException, UnsupportedRepositoryOperationException, RepositoryException{
 		Session manageSession = JackrabbitUtils.getManageSession();
 		NamespaceRegistry namespaceRegistry = manageSession.getWorkspace().getNamespaceRegistry();

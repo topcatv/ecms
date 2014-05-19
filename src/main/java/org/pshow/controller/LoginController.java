@@ -10,10 +10,11 @@ import org.apache.shiro.subject.Subject;
 import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.mvc.annotation.At;
-import org.nutz.mvc.annotation.Fail;
-import org.nutz.mvc.annotation.Ok;
 import org.nutz.mvc.annotation.Param;
+import org.pshow.common.JackrabbitUtils;
 import org.pshow.domain.User;
+import org.pshow.mvc.Result;
+import org.pshow.mvc.SuccessResult;
 import org.pshow.service.UserService;
 
 @IocBean
@@ -23,19 +24,18 @@ public class LoginController {
 	private UserService userService;
 
 	@At
-	@Ok("json")
-	@Fail("exception:403")
-	public User login(@Param("..") User user, HttpSession session)
+	public Result login(@Param("..") User user, HttpSession session)
 			throws LoginException, RepositoryException {
-		return userService.login(user, session);
+		SuccessResult success = new SuccessResult();
+		success.put("user", userService.login(user, session));
+		return success;
 	}
 
 	@At
 	public void logout(HttpSession session) {
 		Subject currentUser = SecurityUtils.getSubject();
 		if (currentUser.isAuthenticated()) {
-			Session jcrSession = (Session) session
-					.getAttribute(UserService.JCR_SESSION);
+			Session jcrSession = JackrabbitUtils.getJcrSessionFromHttpSession(session);
 			if (jcrSession != null) {
 				jcrSession.logout();
 			}

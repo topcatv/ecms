@@ -1,0 +1,5 @@
+[ps:file] > nt:hierarchyNode
+  + ps:content (nt:base) primary mandatory
+  - ps:creator (string) mandatory
+  - ps:lastModifier (string) mandatory
+  - ps:size (long)

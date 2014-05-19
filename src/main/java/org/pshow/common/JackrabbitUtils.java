@@ -5,10 +5,12 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.servlet.http.HttpSession;
 
 import org.apache.jackrabbit.commons.JcrUtils;
 
 public class JackrabbitUtils {
+	public static final String JCR_SESSION = "jcr_session";
 	private static Repository repository;
 	private static Session manageSession;
 
@@ -29,5 +31,9 @@ public class JackrabbitUtils {
 			repository = JcrUtils.getRepository();
 		}
 		return repository;
+	}
+	
+	public static Session getJcrSessionFromHttpSession(HttpSession httpSession){
+		return (Session) httpSession.getAttribute(JCR_SESSION);
 	}
 }

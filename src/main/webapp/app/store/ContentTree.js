@@ -2,16 +2,15 @@ Ext.define('ECM.store.ContentTree', {
 	extend : 'Ext.data.TreeStore',
 	proxy : {
 		type : 'ajax',
-		url : 'data/getTreeList.json',
+		url : 'content/tree',
 		reader : {
 			type : 'json',
-			root : 'menu',
+			root : 'folders',
 			successProperty : 'success'
 		}
 	},
 	root : {
 		text : 'Root',
-		id : '00',
-		expanded : true
+		id : 'root'
 	}
 });
