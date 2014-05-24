@@ -3,6 +3,7 @@ package org.pshow.domain;
 import java.io.Serializable;
 import java.util.List;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nutz.dao.entity.annotation.ColDefine;
 import org.nutz.dao.entity.annotation.ColType;
 import org.nutz.dao.entity.annotation.Column;
@@ -12,8 +13,8 @@ import org.nutz.dao.entity.annotation.ManyMany;
 import org.nutz.dao.entity.annotation.Table;
 import org.nutz.dao.entity.annotation.TableIndexes;
 
-@Table("system_role")
-@TableIndexes({ @Index(name = "role_name", fields = { "name" }, unique = true) })
+@Table("ecm_role")
+@TableIndexes({ @Index(name = "idx_role_name", fields = { "name" }, unique = true) })
 public class Role implements Serializable{
 	private static final long serialVersionUID = 7928270441533321123L;
 	@Id
@@ -24,9 +25,9 @@ public class Role implements Serializable{
 	@Column
 	@ColDefine(type = ColType.VARCHAR, width = 500)
 	private String description;
-	@ManyMany(target = User.class, relation = "system_user_role", from = "roleid", to = "userid")
+	@ManyMany(target = User.class, relation = "ecm_user_role", from = "roleid", to = "userid")
 	private List<User> users;
-	@ManyMany(target = Permission.class, relation = "system_role_permission", from = "roleid", to = "permissionid")
+	@ManyMany(target = Permission.class, relation = "ecm_role_permission", from = "roleid", to = "permissionid")
 	private List<Permission> permissions;
 
 	public Long getId() {
@@ -92,5 +93,10 @@ public class Role implements Serializable{
 		} else if (!id.equals(other.id))
 			return false;
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this);
 	}
 }
