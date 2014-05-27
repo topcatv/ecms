@@ -1,7 +1,7 @@
 Ext.define('ECM.view.TabPanel', {
 	extend : 'Ext.tab.Panel',
 	title : 'User Info',
-	alias : 'widget.edituser',
+	alias : 'widget.ecmTabPanel',
 	defaults : {
 		bodyStyle : 'padding:15px'
 	},

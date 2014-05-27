@@ -1,11 +1,9 @@
 Ext.define('ECM.view.user.Edit', {
 	extend : 'Ext.window.Window',
 	alias : 'widget.useredit',
-
 	title : 'Edit User',
 	layout : 'fit',
 	autoShow : true,
-
 	initComponent : function() {
 		this.items = [{
 			xtype : 'form',

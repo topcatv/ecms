@@ -11,8 +11,12 @@ import javax.jcr.SimpleCredentials;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jackrabbit.api.JackrabbitSession;
+import org.apache.jackrabbit.api.security.user.UserManager;
 import org.apache.jackrabbit.commons.JcrUtils;
+import org.apache.log4j.Logger;
 import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.crypto.RandomNumberGenerator;
 import org.apache.shiro.crypto.SecureRandomNumberGenerator;
 import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.apache.shiro.subject.Subject;
@@ -22,6 +26,8 @@ import org.nutz.dao.Dao;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.lang.Lang;
 import org.nutz.lang.Times;
+import org.nutz.trans.Atom;
+import org.nutz.trans.Trans;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.ShiroUtils;
 import org.pshow.common.page.Pagination;
@@ -30,7 +36,8 @@ import org.pshow.domain.User;
 
 @IocBean(args = { "refer:dao" })
 public class UserService extends BaseService<User> {
-
+	private final static Logger log = Logger.getLogger(UserService.class);
+	
 	public UserService(Dao dao) {
 		super(dao);
 	}
@@ -63,6 +70,22 @@ public class UserService extends BaseService<User> {
 	public void update(User user) {
 		dao().update(user);
 	}
+	
+	public void lock(Long userid) {
+		log.info(String.format("lock user[%s]", userid));
+		updateLock(userid, true);
+	}
+	
+	public void unlock(Long userid) {
+		log.info(String.format("unlock user[%s]", userid));
+		updateLock(userid, false);
+	}
+	
+	private void updateLock(Long userid, boolean isLocked) {
+		dao().update(
+				User.class,
+				Chain.make("is_locked", isLocked), Cnd.where("id", "=", userid));
+	}
 
 	public void update(long uid, String password, boolean isLocked,
 			Integer[] ids) {
@@ -93,9 +116,31 @@ public class UserService extends BaseService<User> {
 						"salt", salt), Cnd.where("id", "=", uid));
 	}
 
-	public void insert(User user) {
-		user = dao().insert(user);
-//		dao().insertRelation(user, "roles");
+	public void insert(final User user) {
+		log.info(String.format("insert user[%s]", user));
+		Trans.exec(new Atom(){
+			public void run(){
+				RandomNumberGenerator rng = new SecureRandomNumberGenerator();
+				String salt = rng.nextBytes().toBase64();
+				String hashedPasswordBase64 = new Sha256Hash(user.getPassword(), salt,
+						1024).toBase64();
+				user.setSalt(salt);
+				user.setPassword(hashedPasswordBase64);
+				dao().insert(user);
+		//		dao().insertRelation(user, "roles");
+				try {
+					Session manageSession = JackrabbitUtils.getManageSession();
+					JackrabbitSession jcrSession = (JackrabbitSession) manageSession;
+					UserManager userManager = jcrSession.getUserManager();
+					if (userManager.getAuthorizable(user.getName()) == null) {
+						userManager.createUser(user.getName(), user.getPassword());
+					}
+					manageSession.save();
+				} catch (RepositoryException re) {
+					throw Lang.wrapThrow(re);
+				}
+			}
+		});
 	}
 	
 	public void save(User user) {
@@ -157,6 +202,16 @@ public class UserService extends BaseService<User> {
 		return getObjListByPager(dao(), getPageNumber(pageNumber), pageSize,
 				null, User.class);
 	}
+	
+	public Pagination listUserByPage(Long roleId, String name, Integer pageNumber, int pageSize) {
+		Cnd cnd = null;
+		if (!Lang.isEmpty(roleId)) {
+			cnd = Cnd.where("id", "=", roleId);
+		} else if (!Lang.isEmpty(name)) {
+			cnd = Cnd.where("name", "LIKE", "%" + name + "%");
+		}
+		return getObjListByPager(dao(), pageNumber, pageSize, cnd, User.class);
+	}
 
 	public User initUser(String name, String openid, String providerid,
 			String addr, boolean isUpdated) {
@@ -178,5 +233,27 @@ public class UserService extends BaseService<User> {
 			dao().fetchLinks(user, "roles");
 		}
 		return user;
+	}
+	
+	public void delete(final User user) {
+		log.info(String.format("delete user[%s]", user));
+		Trans.exec(new Atom(){
+			public void run(){
+				
+				dao().delete(Role.class, user.getId());
+				dao().clear("ecm_user_role", Cnd.where("userid", "=", user.getId()));
+				try {
+					Session manageSession = JackrabbitUtils.getManageSession();
+					JackrabbitSession jsession = (JackrabbitSession) manageSession;
+					UserManager userManager = jsession.getUserManager();
+					org.apache.jackrabbit.api.security.user.User juser = (org.apache.jackrabbit.api.security.user.User) userManager
+							.getAuthorizable(user.getName());
+					juser.remove();
+					manageSession.save();
+				} catch (RepositoryException re) {
+					throw Lang.wrapThrow(re);
+				}
+			}
+		});
 	}
 }

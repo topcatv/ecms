@@ -29,8 +29,8 @@ public class UserController {
 	private UserService userService;
 	
 	@At
-	public Pagination list(Integer pageNumber, int pageSize) {
-		return userService.getUserListByPager(pageNumber, pageSize);
+	public Pagination list(Long userId, String name, Integer pageNumber, int pageSize) {
+		return userService.listUserByPage(userId, name, pageNumber, pageSize);
 	}
 	
 	@At
@@ -38,6 +38,31 @@ public class UserController {
 		userService.save(user);
 		return new SuccessResult();
 	}
+	
+	@At
+	public Result delete(User user) {
+		userService.delete(user);
+		return new SuccessResult();
+	}
+	
+	@At
+	public Result lock(Long userId) {
+		userService.lock(userId);
+		return new SuccessResult();
+	}
+	
+	@At
+	public Result unlock(Long userId) {
+		userService.unlock(userId);
+		return new SuccessResult();
+	}
+	
+	@At
+	public Result update(User user) {
+		userService.update(user);
+		return new SuccessResult();
+	}
+	
 
 	@At
 	public Map<String, String> regist(final User user) {
