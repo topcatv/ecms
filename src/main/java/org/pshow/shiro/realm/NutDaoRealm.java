@@ -9,6 +9,8 @@ import org.apache.shiro.authc.LockedAccountException;
 import org.apache.shiro.authc.SimpleAuthenticationInfo;
 import org.apache.shiro.authc.UnknownAccountException;
 import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.authz.AuthorizationInfo;
+import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.util.ByteSource;
 import org.nutz.lang.Lang;
 import org.pshow.domain.User;
@@ -36,5 +38,11 @@ public class NutDaoRealm extends AbstractNutAuthoRealm {
 		ByteSource salt = ByteSource.Util.bytes(user.getSalt());
 		info.setCredentialsSalt(salt);
 		return info;
+	}
+
+	@Override
+	protected AuthorizationInfo doGetAuthorizationInfo(
+			PrincipalCollection principals) {
+		return super.doGetAuthorizationInfo(principals);
 	}
 }

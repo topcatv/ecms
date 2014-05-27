@@ -95,7 +95,15 @@ public class UserService extends BaseService<User> {
 
 	public void insert(User user) {
 		user = dao().insert(user);
-		dao().insertRelation(user, "roles");
+//		dao().insertRelation(user, "roles");
+	}
+	
+	public void save(User user) {
+		int count = dao().count(User.class, Cnd.where("name", "=", user.getName()));
+		if (count > 0) {
+			throw new IllegalArgumentException(String.format("user name[%s] already exists!", user.getName()));
+		}
+		insert(user);
 	}
 
 	public boolean save(String username, String password, boolean isEnabled,

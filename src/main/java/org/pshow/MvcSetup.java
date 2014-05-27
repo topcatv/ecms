@@ -29,9 +29,9 @@ import org.nutz.mvc.NutConfig;
 import org.nutz.mvc.Setup;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.domain.Permission;
-import org.pshow.domain.PermissionCategory;
 import org.pshow.domain.Role;
 import org.pshow.domain.User;
+import org.pshow.domain.UserGroup;
 
 public class MvcSetup implements Setup {
 
@@ -71,11 +71,11 @@ public class MvcSetup implements Setup {
 			e.printStackTrace();
 		}
 		// 若必要的数据表不存在，则初始化数据库
-		if (!dao.exists(User.class)) {
+		if (!dao.exists(Permission.class)) {
 			dao.create(User.class, true);
 			dao.create(Role.class, true);
 			dao.create(Permission.class, true);
-			dao.create(PermissionCategory.class, true);
+			dao.create(UserGroup.class, true);
 			FileSqlManager fm = new FileSqlManager("init_system_h2.sql");
 			List<Sql> sqlList = fm.createCombo(fm.keys());
 			dao.execute(sqlList.toArray(new Sql[sqlList.size()]));

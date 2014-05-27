@@ -3,6 +3,7 @@ import java.util.List;
 
 import org.nutz.dao.Condition;
 import org.nutz.dao.Dao;
+import org.nutz.dao.entity.Record;
 import org.nutz.dao.pager.Pager;
 import org.nutz.lang.Lang;
 import org.nutz.service.IdEntityService;
@@ -24,6 +25,16 @@ public class BaseService<T> extends IdEntityService<T> {
 		Pager pager = dao.createPager(pageNumber, pageSize);
 		List<T> list = dao.query(entityType, cnd, pager);
 		pager.setRecordCount(dao.count(entityType, cnd));
+		Pagination pagination = new Pagination(pageNumber, pageSize, pager.getRecordCount(), list);
+		return pagination;
+	}
+	
+	public Pagination getListByPage(Integer pageNumber, int pageSize, Condition cnd, String tableName) {
+		Dao dao = dao();
+		pageNumber = getPageNumber(pageNumber);
+		Pager pager = dao.createPager(pageNumber, pageSize);
+		List<Record> list = dao.query(tableName, cnd, pager);
+		pager.setRecordCount(dao.count(tableName, cnd));
 		Pagination pagination = new Pagination(pageNumber, pageSize, pager.getRecordCount(), list);
 		return pagination;
 	}

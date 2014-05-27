@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nutz.dao.entity.annotation.ColDefine;
 import org.nutz.dao.entity.annotation.ColType;
 import org.nutz.dao.entity.annotation.Column;
@@ -13,8 +14,8 @@ import org.nutz.dao.entity.annotation.ManyMany;
 import org.nutz.dao.entity.annotation.Table;
 import org.nutz.dao.entity.annotation.TableIndexes;
 
-@Table("system_user")
-@TableIndexes({ @Index(name = "user_name", fields = { "name" }, unique = true), @Index(name = "user_openid", fields = { "openid" }, unique = true) })
+@Table("ecm_user")
+@TableIndexes({ @Index(name = "idx_user_name", fields = { "name" }, unique = true), @Index(name = "idx_user_openid", fields = { "openid" }, unique = true) })
 public class User implements Serializable {
 
 	private static final long serialVersionUID = -965829144356813385L;
@@ -51,7 +52,7 @@ public class User implements Serializable {
 	@Column("register_ip")
 	@ColDefine(type = ColType.VARCHAR, width = 15)
 	private String registerIp;
-	@ManyMany(target = Role.class, relation = "system_user_role", from = "userid", to = "roleid")
+	@ManyMany(target = Role.class, relation = "ecm_user_role", from = "userid", to = "roleid")
 	private List<Role> roles;
 
 	@Column("is_updated")
@@ -160,5 +161,10 @@ public class User implements Serializable {
 
 	public void setSalt(String salt) {
 		this.salt = salt;
+	}
+	
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this);
 	}
 }

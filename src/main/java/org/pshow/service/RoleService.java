@@ -10,9 +10,12 @@ import org.nutz.dao.Cnd;
 import org.nutz.dao.Dao;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.lang.Lang;
+import org.nutz.trans.Atom;
+import org.nutz.trans.Trans;
 import org.pshow.common.page.Pagination;
 import org.pshow.domain.Permission;
 import org.pshow.domain.Role;
+import org.pshow.domain.User;
 
 @IocBean(args = { "refer:dao" })
 public class RoleService extends BaseService<Role> {
@@ -25,23 +28,33 @@ public class RoleService extends BaseService<Role> {
 		return query(null, null);
 	}
 
-	public void insert(Role role) {
-		role = dao().insert(role);
-		dao().insertRelation(role, "permissions");
+	public void insert(final Role role) {
+		Trans.exec(new Atom(){
+			public void run(){
+				Role newRole = dao().insert(role);
+				newRole.setPermissions(role.getPermissions());
+				dao().insertRelation(newRole, "permissions");
+				newRole.setUsers(role.getUsers());
+				dao().insertRelation(newRole, "users");
+			}
+		});
 	}
 
-	public void delete(Long id)
-	{
-		dao().delete(Role.class, id);
-		dao().clear("system_role_permission", Cnd.where("roleid", "=", id));
-		dao().clear("system_user_role", Cnd.where("roleid", "=", id));
+	public void delete(final Long id) {
+		Trans.exec(new Atom(){
+			public void run(){
+				dao().delete(Role.class, id);
+				dao().clear("ecm_role_permission", Cnd.where("roleid", "=", id));
+				dao().clear("ecm_user_role", Cnd.where("roleid", "=", id));
+			}
+		});
 	}
 	public Role view(Long id) {
 		return dao().fetchLinks(fetch(id), "permissions");
 	}
 
 	public void update(Role role) {
-		dao().update(role);
+		dao().updateWith(role, "permissions");
 	}
 
 	public Role fetchByName(String name) {
@@ -57,14 +70,52 @@ public class RoleService extends BaseService<Role> {
 		return permissionNameList;
 	}
 
-	public void updateRoleRelation(Role role, List<Permission> perms) {
-		dao().clearLinks(role, "permissions");
-		role.getPermissions().clear();
-		dao().update(role);
-		if (!Lang.isEmpty(perms)) {
-			role.setPermissions(perms);
-			dao().insertRelation(role, "permissions");
-		}
+	@Deprecated
+	public void updatePermissionRelation(final Role role, final List<Permission> perms) {
+		Trans.exec(new Atom(){
+			public void run(){
+				dao().clear("ecm_role_permission", Cnd.where("roleid", "=", role.getId()));
+				dao().update(role);
+				if (!Lang.isEmpty(perms)) {
+					role.setPermissions(perms);
+					dao().insertRelation(role, "permissions");
+				}
+			}
+		});
+	}
+	
+	public void updatePermissionRelation(final long roleId, final List<Permission> addList, final List<Permission> removeList) {
+		Trans.exec(new Atom(){
+			public void run(){
+				Dao dao = dao();
+				Role role = new Role();
+				role.setId(roleId);
+				if (!Lang.isEmpty(removeList)) {
+					dao.clearLinks(role, "permissions");
+				}
+				if (!Lang.isEmpty(addList)) {
+					role.setPermissions(addList);
+					dao.insertRelation(role, "permissions");
+				}
+			}
+		});
+	}
+	
+	public void updateUserRelation(final long roleId, final List<User> addList, final List<User> removeList) {
+		Trans.exec(new Atom(){
+			public void run(){
+				Dao dao = dao();
+				Role role = new Role();
+				role.setId(roleId);
+				if (!Lang.isEmpty(removeList)) {
+					dao.clearLinks(role, "users");
+				}
+				if (!Lang.isEmpty(addList)) {
+					role.setUsers(addList);
+					dao.insertRelation(role, "users");
+				}
+			}
+		});
 	}
 
 	public Map<Long, String> map() {
@@ -77,14 +128,46 @@ public class RoleService extends BaseService<Role> {
 	}
 
 	public void addPermission(Long roleId, Long permissionId) {
-		dao().insert("system_role_permission", Chain.make("roleid", roleId).add("permissionid", permissionId));
+		dao().insert("ecm_role_permission", Chain.make("roleid", roleId).add("permissionid", permissionId));
 	}
 
 	public void removePermission(Long roleId, Long permissionId) {
-		dao().clear("system_role_permission", Cnd.where("roleid", "=", roleId).and("permissionid", "=", permissionId));
+		dao().clear("ecm_role_permission", Cnd.where("roleid", "=", roleId).and("permissionid", "=", permissionId));
 	}
 
-	public Pagination getRoleListByPager(Integer pageNumber, int pageSize) {
-		return getObjListByPager(dao(), pageNumber, pageSize, null, Role.class);
+	public Pagination listRoleByPage(Long roleId, String name, Integer pageNumber, int pageSize) {
+		Cnd cnd = null;
+		if (!Lang.isEmpty(roleId)) {
+			cnd = Cnd.where("id", "=", roleId);
+		} else if (!Lang.isEmpty(name)) {
+			cnd = Cnd.where("name", "LIKE", "%" + name + "%");
+		}
+		return getObjListByPager(dao(), pageNumber, pageSize, cnd, Role.class);
+	}
+	
+	@Deprecated
+	public List<Permission> listPermission(Long roleId, String name, Integer pageNumber, int pageSize) {
+		Role role = dao().fetchLinks(dao().fetch(Role.class, roleId), "permissions", Cnd.where("name", "LIKE", name));
+		return role.getPermissions();
+	}
+	
+	public Pagination listPermissionByPage(Long roleId, String name, Integer pageNumber, int pageSize) {
+		Cnd cnd = null;
+		if (!Lang.isEmpty(roleId)) {
+			cnd = Cnd.where("roleid", "=", roleId);
+		} else if (!Lang.isEmpty(name)) {
+			cnd = Cnd.where("name", "LIKE", "%" + name + "%");
+		}
+		return getListByPage(pageNumber, pageSize, cnd, "ecm_role_permission");
+	}
+	
+	public Pagination listUserByPage(Long roleId, String name, Integer pageNumber, int pageSize) {
+		Cnd cnd = null;
+		if (!Lang.isEmpty(roleId)) {
+			cnd = Cnd.where("roleid", "=", roleId);
+		} else if (!Lang.isEmpty(name)) {
+			cnd = Cnd.where("name", "LIKE", "%" + name + "%");
+		}
+		return getListByPage(pageNumber, pageSize, cnd, "ecm_user_role");
 	}
 }

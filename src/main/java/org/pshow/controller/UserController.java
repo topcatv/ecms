@@ -15,15 +15,29 @@ import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.mvc.annotation.At;
 import org.pshow.common.JackrabbitUtils;
+import org.pshow.common.page.Pagination;
 import org.pshow.domain.User;
+import org.pshow.mvc.Result;
+import org.pshow.mvc.SuccessResult;
 import org.pshow.service.UserService;
 
 @IocBean
-@At("/users")
+@At("/user")
 public class UserController {
 
 	@Inject
 	private UserService userService;
+	
+	@At
+	public Pagination list(Integer pageNumber, int pageSize) {
+		return userService.getUserListByPager(pageNumber, pageSize);
+	}
+	
+	@At
+	public Result create(User user) {
+		userService.save(user);
+		return new SuccessResult();
+	}
 
 	@At
 	public Map<String, String> regist(final User user) {
