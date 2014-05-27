@@ -18,5 +18,14 @@ Ext.define('ECM.model.Content', {
 	}, {
 		name : 'created',
 		type : 'date'
+	}, {
+		name : 'creator',
+		type : 'string'
+	}, {
+		name : 'lastModifiedBy',
+		type : 'string'
+	}, {
+		name : 'lastModified',
+		type : 'date'
 	} ]
 });

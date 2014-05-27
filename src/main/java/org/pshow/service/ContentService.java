@@ -1,10 +1,12 @@
 package org.pshow.service;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.List;
 
+import javax.activation.MimetypesFileTypeMap;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemExistsException;
@@ -22,9 +24,15 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
+import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
+import javax.jcr.version.VersionHistory;
+import javax.jcr.version.VersionIterator;
+import javax.jcr.version.VersionManager;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.value.BinaryImpl;
 import org.nutz.ioc.loader.annotation.IocBean;
@@ -36,6 +44,8 @@ import sun.net.www.MimeTable;
 
 @IocBean
 public class ContentService {
+	
+	private static final MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
 
 	public void createFolder(String parent, String name, HttpSession session)
 			throws ItemNotFoundException, RepositoryException,
@@ -46,7 +56,8 @@ public class ContentService {
 		Session jcrSession = getJcrSession(session);
 		Node parentNode = getNode(parent, jcrSession);
 
-		parentNode.addNode(name, NodeType.NT_FOLDER);
+		Node addNode = parentNode.addNode(name, "ps:folder");
+		addNode.setProperty("ps:name", name);
 		jcrSession.save();
 	}
 
@@ -59,22 +70,24 @@ public class ContentService {
 		}
 	}
 
-	public ArrayList<File> getChildrenContent(String parent, HttpSession session, String nodeType)
-			throws RepositoryException, ItemNotFoundException {
+	public ArrayList<File> getChildrenContent(String parent,
+			HttpSession session, String nodeType) throws RepositoryException,
+			ItemNotFoundException {
 		Session jcrSession = getJcrSession(session);
 		ArrayList<File> items = new ArrayList<File>();
 		String sql = "";
-		if ("root".equals(parent)) {
+		if ("root".equals(parent) || StringUtils.isBlank(parent)) {
 			sql = "select * from [%s] as c where ischildnode(c, ['/'])";
 		} else {
 			sql = "select * from [%s] as c where ischildnode(c, ['"
 					+ jcrSession.getNodeByIdentifier(parent).getPath() + "'])";
 		}
-		if("*".equals(nodeType)){
+		if ("*".equals(nodeType)) {
 			nodeType = NodeType.NT_BASE;
 		}
 		QueryManager queryManager = jcrSession.getWorkspace().getQueryManager();
-		Query query = queryManager.createQuery(String.format(sql, nodeType), Query.JCR_SQL2);
+		Query query = queryManager.createQuery(String.format(sql, nodeType),
+				Query.JCR_SQL2);
 		QueryResult result = query.execute();
 		NodeIterator nodes = result.getNodes();
 		while (nodes.hasNext()) {
@@ -82,8 +95,21 @@ public class ContentService {
 			File item = new File();
 			item.setId(nextNode.getIdentifier());
 			item.setName(nextNode.getName());
-			boolean isFolder = nextNode.isNodeType(NodeType.NT_FOLDER);
+			boolean isFolder = nextNode.isNodeType("ps:folder");
 			item.setFolder(isFolder);
+			if (!isFolder) {
+				item.setSize(nextNode.getProperty("ps:size").getLong());
+				item.setMimeType(nextNode.getProperty(
+						"ps:content/" + JcrConstants.JCR_MIMETYPE).getString());
+			}
+			item.setCreated(nextNode.getProperty(JcrConstants.JCR_CREATED)
+					.getDate().getTime());
+			item.setLastModified(nextNode
+					.getProperty(JcrConstants.JCR_LASTMODIFIED).getDate()
+					.getTime());
+			item.setCreator(nextNode.getProperty("jcr:createdBy").getString());
+			item.setLastModifiedBy(nextNode.getProperty("jcr:lastModifiedBy")
+					.getString());
 			items.add(item);
 		}
 		return items;
@@ -92,7 +118,7 @@ public class ContentService {
 	public ArrayList<TreeItem> getChildrenForTree(String parent,
 			HttpSession session) throws RepositoryException,
 			ItemNotFoundException {
-		ArrayList<File> items = getChildrenContent(parent, session, NodeType.NT_FOLDER);
+		ArrayList<File> items = getChildrenContent(parent, session, "ps:folder");
 		ArrayList<TreeItem> treeItems = new ArrayList<TreeItem>();
 		for (File file : items) {
 			TreeItem treeItem = new TreeItem();
@@ -123,19 +149,139 @@ public class ContentService {
 		Session jcrSession = getJcrSession(session);
 		Node pNode = getNode(parent, jcrSession);
 		Node fileNode = pNode.addNode(fileName, "ps:file");
-		
+
 		// TODO 需要定义常量
-		fileNode.setProperty("ps:creator", jcrSession.getUserID());
-		fileNode.setProperty("ps:lastModifier", jcrSession.getUserID());
 		fileNode.setProperty("ps:size", file.length());
-		
-		Node resNode = fileNode.addNode("ps:content", NodeType.NT_RESOURCE);  
-        resNode.setProperty(JcrConstants.JCR_MIMETYPE, mimeType);  
-        resNode.setProperty(JcrConstants.JCR_ENCODING, "");
-        resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(new FileInputStream(file)));  
-        resNode.setProperty(JcrConstants.JCR_LASTMODIFIED, Calendar.getInstance());
-        
-        jcrSession.save();
+		fileNode.setProperty("ps:name", fileName);
+		fileNode.setProperty("ps:mimeType", mimeType);
+
+		Node resNode = fileNode.addNode("ps:content", NodeType.NT_RESOURCE);
+		resNode.setProperty(JcrConstants.JCR_MIMETYPE, mimeType);
+		resNode.setProperty(JcrConstants.JCR_ENCODING, "");
+		resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(
+				new FileInputStream(file)));
+
+		jcrSession.save();
+	}
+
+	public void deteleContent(String[] ids, HttpSession session)
+			throws ItemNotFoundException, RepositoryException {
+		Session jcrSession = getJcrSession(session);
+		if (ids != null && ids.length > 0) {
+			for (String id : ids) {
+				Node node = jcrSession.getNodeByIdentifier(id);
+				node.remove();
+			}
+			jcrSession.save();
+		}
+	}
+
+	public List<org.pshow.domain.Version> getHistory(String id,
+			HttpSession session) throws ItemNotFoundException,
+			RepositoryException {
+		Session jcrSession = getJcrSession(session);
+		VersionManager versionManager = jcrSession.getWorkspace()
+				.getVersionManager();
+		Node node = jcrSession.getNodeByIdentifier(id);
+		VersionHistory versionHistory = versionManager.getVersionHistory(node
+				.getPath());
+		VersionIterator versions = versionHistory.getAllVersions();
+		ArrayList<org.pshow.domain.Version> history = new ArrayList<org.pshow.domain.Version>();
+		while (versions.hasNext()) {
+			Version version = versions.nextVersion();
+			String[] versionLabels = versionHistory.getVersionLabels(version);
+			org.pshow.domain.Version v = new org.pshow.domain.Version();
+			v.setName(version.getName());
+			if (ArrayUtils.isNotEmpty(versionLabels)) {
+				v.setLabel(versionLabels[0]);
+			}
+			v.setCreated(version.getCreated().getTime());
+			history.add(v);
+		}
+		return history;
+	}
+
+	public void updateFile(String id, String fileName, java.io.File file,
+			HttpSession session) throws ItemNotFoundException,
+			RepositoryException, FileNotFoundException, IOException {
+		Session jcrSession = getJcrSession(session);
+		Node fileNode = getNode(id, jcrSession);
+		VersionManager versionManager = jcrSession.getWorkspace()
+				.getVersionManager();
+		if (!fileNode.isNodeType(NodeType.MIX_VERSIONABLE)) {
+			fileNode.addMixin(NodeType.MIX_VERSIONABLE);
+			jcrSession.save();
+		}
+		versionManager.checkout(fileNode.getPath());
+		if (!fileNode.getName().equals(fileName)) {
+			fileNode.setProperty("ps:name", fileName);
+			String destAbsPath = fileNode.getParent().getPath() + "/"
+					+ fileName;
+			jcrSession.move(fileNode.getPath(),
+					destAbsPath.replaceAll("//", "/"));
+		}
+		if (file != null && file.exists()) {
+			String mimeType = mimetypesFileTypeMap.getContentType(file);
+			if (mimeType == null)
+				mimeType = "application/octet-stream";
+
+			// TODO 需要定义常量
+			fileNode.setProperty("ps:size", file.length());
+
+			Node resNode = fileNode.getNode("ps:content");
+			resNode.setProperty(JcrConstants.JCR_MIMETYPE, mimeType);
+			resNode.setProperty(JcrConstants.JCR_ENCODING, "");
+			resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(
+					new FileInputStream(file)));
+		}
+		jcrSession.save();
+		versionManager.checkin(fileNode.getPath());
+	}
+
+	public void updateFolder(String id, String name, HttpSession session)
+			throws ItemNotFoundException, RepositoryException {
+		Session jcrSession = getJcrSession(session);
+		Node folder = jcrSession.getNodeByIdentifier(id);
+		folder.setProperty("ps:name", name);
+		String destAbsPath = folder.getParent().getPath() + "/" + name;
+		jcrSession.move(folder.getPath(), destAbsPath.replaceAll("//", "/"));
+		jcrSession.save();
+	}
+
+	public ArrayList<File> fullText(String parent, String keywords,
+			HttpSession session) throws ItemNotFoundException,
+			RepositoryException {
+		Session jcrSession = getJcrSession(session);
+		ArrayList<File> items = new ArrayList<File>();
+		String sql = "SELECT * FROM [nt:hierarchyNode] as t WHERE CONTAINS(t.*, '%s')";
+		QueryManager queryManager = jcrSession.getWorkspace().getQueryManager();
+		Query query = queryManager.createQuery(String.format(sql, keywords),
+				Query.JCR_SQL2);
+		QueryResult result = query.execute();
+		NodeIterator nodes = result.getNodes();
+		while (nodes.hasNext()) {
+			Node nextNode = nodes.nextNode();
+			File item = new File();
+			item.setId(nextNode.getIdentifier());
+			item.setName(nextNode.getName());
+			boolean isFolder = nextNode.isNodeType("ps:folder");
+			item.setFolder(isFolder);
+			if (!isFolder) {
+				item.setSize(nextNode.getProperty("ps:size").getLong());
+				item.setMimeType(nextNode.getProperty(
+						"ps:content/" + JcrConstants.JCR_MIMETYPE).getString());
+			}
+			item.setCreated(nextNode.getProperty(JcrConstants.JCR_CREATED)
+					.getDate().getTime());
+			item.setLastModified(nextNode
+					.getProperty(JcrConstants.JCR_LASTMODIFIED).getDate()
+					.getTime());
+			item.setCreator(nextNode.getProperty("jcr:createdBy").getString());
+			item.setLastModifiedBy(nextNode.getProperty("jcr:lastModifiedBy")
+					.getString());
+			items.add(item);
+		}
+		return items;
 	}
 
 }

@@ -4,3 +4,4 @@ target
 /derby.log
 /.settings
 /jackrabbit
+/.apt_generated/

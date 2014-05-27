@@ -14,7 +14,7 @@ public class File {
 	private InputStream stream;
 	private Date lastModified;
 	private String creator;
-	private String modifier;
+	private String lastModifiedBy;
 
 	public String getName() {
 		return name;
@@ -88,11 +88,11 @@ public class File {
 		this.creator = creator;
 	}
 
-	public String getModifier() {
-		return modifier;
+	public String getLastModifiedBy() {
+		return lastModifiedBy;
 	}
 
-	public void setModifier(String modifier) {
-		this.modifier = modifier;
+	public void setLastModifiedBy(String lastModifiedBy) {
+		this.lastModifiedBy = lastModifiedBy;
 	}
 }
