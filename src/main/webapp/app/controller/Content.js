@@ -3,7 +3,7 @@ Ext.define('ECM.controller.Content', {
 	stores : [ 'Content', 'ContentTree', 'Version' ],
 	models : [ 'Content', 'Version' ],
 	views : [ 'content.ContentGrid', 'content.CreateFolderWindow', 'content.UpdateFolderWindow', 'content.UpdateFileWindow',
-			'content.Tree', 'LeftContainer', 'content.CreateFileWindow', 'content.HistoryWindow' ],
+			'content.Tree', 'LeftContainer', 'content.CreateFileWindow', 'content.HistoryWindow', 'content.DetailWindow' ],
 	refs : [ {
 		ref : 'contentGrid',
 		selector : 'content_grid'
@@ -25,6 +25,9 @@ Ext.define('ECM.controller.Content', {
 	}, {
 		ref : 'historyWindow',
 		selector : 'history_window'
+	}, {
+		ref : 'detailWindow',
+		selector : 'detail_window'
 	} ],
 
 	init : function() {
@@ -33,6 +36,7 @@ Ext.define('ECM.controller.Content', {
 		Ext.create('ECM.view.content.CreateFileWindow', {});
 		Ext.create('ECM.view.content.UpdateFileWindow', {});
 		Ext.create('ECM.view.content.HistoryWindow', {});
+		Ext.create('ECM.view.content.DetailWindow', {});
 		this.control({
 			'create_file_window button[action=upload]' : {
 				click : this.createFile
@@ -46,6 +50,9 @@ Ext.define('ECM.controller.Content', {
 			'content_grid button[action=delete]' : {
 				click : this.deleteContent
 			},
+			'content_grid button[action=edit]' : {
+				click : this.editContent
+			},
 			'content_grid button[action=show_history]' : {
 				click : this.show_history
 			},
@@ -53,7 +60,10 @@ Ext.define('ECM.controller.Content', {
 				specialkey : this.fulltext
 			},
 			"content_grid" : {
-				itemdblclick : this.editContent
+				itemdblclick : this.detail
+			},
+			"history_window button[action=restore]" : {
+				click : this.restore
 			},
 			'create_folder_window button[action=create]' : {
 				click : this.createFolder
@@ -78,6 +88,55 @@ Ext.define('ECM.controller.Content', {
 		});
 	},
 	
+	detail: function(grid, record){
+		if(record.get("isFolder")){
+			this.getStore('Content').reload({
+				params : {
+					parent : record.get('id')
+				}
+			});
+		} else {
+			var detail = this.getDetailWindow();
+			detail.update(record.getData());
+			detail.show();
+		}
+	},
+	restore : function(button){
+		var grid = button.up('grid'), cm = grid.getSelectionModel(), seleted = cm.getLastSelected();
+		var versionName = seleted.get('name');
+		var _this = this;
+		Ext.Msg.confirm("提示信息","确定要恢复到版本'"+versionName+"'吗？", function(button, text){
+			if(button == "yes"){
+				var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"正在恢复..."});
+				myMask.show();
+				var id = this._getGridSelectedIds()[0];
+				var parentNode = this._getTreeSelected();
+				Ext.Ajax.request({
+				    url: 'content/restore',
+				    params: {'id': id, 'versionName': versionName},
+				    method: 'POST',
+				    success: function(response, opts) {
+				        var obj = Ext.decode(response.responseText);
+				        console.dir(obj);
+				        if (myMask != undefined){ myMask.hide();}
+				        _this.getStore('Content').reload({
+							params : {
+								parent : parentNode.get('id')
+							}
+						});
+				        _this.getStore('ContentTree').reload();
+				        Ext.Msg.alert("提示信息","恢复成功");
+				    },
+				    failure: function(response, opts) {
+				    	var result = Ext.decode(response.responseText);
+				        console.log('server-side failure with status code ' + response.status);
+				        if (myMask != undefined){ myMask.hide();}
+				        Ext.Msg.alert("提示信息",result.data);
+				    }
+				});
+			}
+		}, _this);
+	},
 	fulltext : function(field, e){
 		if (e.getKey() == e.ENTER) {
             var keywords = field.getValue();
@@ -146,7 +205,16 @@ Ext.define('ECM.controller.Content', {
 			}
 		});
 	},
-	editContent : function(grid, record){
+	editContent : function(button){
+		var selected = this._getGridSelected(), record = selected[0];
+		if(selected.length <= 0){
+			Ext.Msg.alert("提示信息", '请选择一个文档');
+			return;
+		}
+		if(selected.length > 1){
+			Ext.Msg.alert("提示信息", '只能选择一个文档');
+			return;
+		}
 		if(record.get("isFolder")){
 			var win = this.getUpdateFolderWindow();
 			var form = win.down('form');
@@ -263,7 +331,7 @@ Ext.define('ECM.controller.Content', {
 				var ids = this._getGridSelectedIds();
 				var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"正在删除..."});
 				myMask.show();
-				var parentNode = this.getTree().getSelectionModel().getLastSelected();
+				var parentNode = this._getTreeSelected();
 				Ext.Ajax.request({
 				    url: 'content/delete',
 				    params: {'ids': ids},

@@ -3,6 +3,7 @@ package org.pshow.service;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
@@ -27,7 +29,6 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
-import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
 import javax.servlet.http.HttpSession;
 
@@ -37,6 +38,7 @@ import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.value.BinaryImpl;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.pshow.common.JackrabbitUtils;
+import org.pshow.common.SimpleCharsetDetector;
 import org.pshow.domain.File;
 import org.pshow.domain.TreeItem;
 
@@ -44,7 +46,7 @@ import sun.net.www.MimeTable;
 
 @IocBean
 public class ContentService {
-	
+
 	private static final MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
 
 	public void createFolder(String parent, String name, HttpSession session)
@@ -61,7 +63,7 @@ public class ContentService {
 		jcrSession.save();
 	}
 
-	public Node getNode(String identifier, Session jcrSession)
+	private Node getNode(String identifier, Session jcrSession)
 			throws RepositoryException, ItemNotFoundException {
 		if ("root".equals(identifier)) {
 			return jcrSession.getRootNode();
@@ -94,13 +96,14 @@ public class ContentService {
 			Node nextNode = nodes.nextNode();
 			File item = new File();
 			item.setId(nextNode.getIdentifier());
-			item.setName(nextNode.getName());
+			item.setName(nextNode.getProperty("ps:name").getString());
 			boolean isFolder = nextNode.isNodeType("ps:folder");
 			item.setFolder(isFolder);
 			if (!isFolder) {
 				item.setSize(nextNode.getProperty("ps:size").getLong());
 				item.setMimeType(nextNode.getProperty(
 						"ps:content/" + JcrConstants.JCR_MIMETYPE).getString());
+				item.setEncoding(nextNode.getProperty("ps:encoding").getString());
 			}
 			item.setCreated(nextNode.getProperty(JcrConstants.JCR_CREATED)
 					.getDate().getTime());
@@ -157,9 +160,15 @@ public class ContentService {
 
 		Node resNode = fileNode.addNode("ps:content", NodeType.NT_RESOURCE);
 		resNode.setProperty(JcrConstants.JCR_MIMETYPE, mimeType);
-		resNode.setProperty(JcrConstants.JCR_ENCODING, "");
-		resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(
-				new FileInputStream(file)));
+		if (mimeType.contains("text")) {
+			String charset = SimpleCharsetDetector.detectCharset(new FileInputStream(file));
+			fileNode.setProperty("ps:encoding", charset);
+			resNode.setProperty(JcrConstants.JCR_ENCODING, charset);
+		} else {
+			fileNode.setProperty("ps:encoding", "UTF-8");
+			resNode.setProperty(JcrConstants.JCR_ENCODING, "UTF-8");
+		}
+		resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(new FileInputStream(file)));
 
 		jcrSession.save();
 	}
@@ -185,10 +194,19 @@ public class ContentService {
 		Node node = jcrSession.getNodeByIdentifier(id);
 		VersionHistory versionHistory = versionManager.getVersionHistory(node
 				.getPath());
-		VersionIterator versions = versionHistory.getAllVersions();
 		ArrayList<org.pshow.domain.Version> history = new ArrayList<org.pshow.domain.Version>();
-		while (versions.hasNext()) {
-			Version version = versions.nextVersion();
+
+		Version rootVersion = versionHistory.getRootVersion();
+		getSuccessorVersions(versionHistory, history, rootVersion);
+
+		return history;
+	}
+
+	private void getSuccessorVersions(VersionHistory versionHistory,
+			ArrayList<org.pshow.domain.Version> history, Version rootVersion)
+			throws RepositoryException, VersionException {
+		Version[] successors = rootVersion.getSuccessors();
+		for (Version version : successors) {
 			String[] versionLabels = versionHistory.getVersionLabels(version);
 			org.pshow.domain.Version v = new org.pshow.domain.Version();
 			v.setName(version.getName());
@@ -197,8 +215,8 @@ public class ContentService {
 			}
 			v.setCreated(version.getCreated().getTime());
 			history.add(v);
+			getSuccessorVersions(versionHistory, history, version);
 		}
-		return history;
 	}
 
 	public void updateFile(String id, String fileName, java.io.File file,
@@ -227,12 +245,19 @@ public class ContentService {
 
 			// TODO 需要定义常量
 			fileNode.setProperty("ps:size", file.length());
+			fileNode.setProperty("ps:mimeType", mimeType);
 
 			Node resNode = fileNode.getNode("ps:content");
 			resNode.setProperty(JcrConstants.JCR_MIMETYPE, mimeType);
-			resNode.setProperty(JcrConstants.JCR_ENCODING, "");
-			resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(
-					new FileInputStream(file)));
+			if (mimeType.contains("text")) {
+				String charset = SimpleCharsetDetector.detectCharset(new FileInputStream(file));
+				fileNode.setProperty("ps:encoding", charset);
+				resNode.setProperty(JcrConstants.JCR_ENCODING, charset);
+			} else {
+				fileNode.setProperty("ps:encoding", "UTF-8");
+				resNode.setProperty(JcrConstants.JCR_ENCODING, "UTF-8");
+			}
+			resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(new FileInputStream(file)));
 		}
 		jcrSession.save();
 		versionManager.checkin(fileNode.getPath());
@@ -282,6 +307,49 @@ public class ContentService {
 			items.add(item);
 		}
 		return items;
+	}
+
+	public void restore(String id, String versionName, HttpSession session)
+			throws UnsupportedRepositoryOperationException, RepositoryException {
+		Session jcrSession = getJcrSession(session);
+		VersionManager versionManager = jcrSession.getWorkspace()
+				.getVersionManager();
+		Node node = jcrSession.getNodeByIdentifier(id);
+		versionManager.restore(node.getPath(), versionName, true);
+	}
+
+	public InputStream getStream(String id, HttpSession session)
+			throws ItemNotFoundException, RepositoryException {
+		Node node = getNode(id, getJcrSession(session));
+		Node resource = node.getNode("ps:content");
+		return resource.getProperty(JcrConstants.JCR_DATA).getBinary()
+				.getStream();
+	}
+
+	public File getFile(String id, HttpSession session)
+			throws ItemNotFoundException, RepositoryException {
+		Node node = getNode(id, getJcrSession(session));
+		File item = new File();
+		item.setId(node.getIdentifier());
+		item.setName(node.getProperty("ps:name").getString());
+		boolean isFolder = node.isNodeType("ps:folder");
+		item.setFolder(isFolder);
+		if (!isFolder) {
+			item.setSize(node.getProperty("ps:size").getLong());
+			item.setMimeType(node.getProperty(
+					"ps:content/" + JcrConstants.JCR_MIMETYPE).getString());
+			item.setStream(node.getNode("ps:content")
+					.getProperty(JcrConstants.JCR_DATA).getBinary().getStream());
+			item.setEncoding(node.getProperty("ps:encoding").getString());
+		}
+		item.setCreated(node.getProperty(JcrConstants.JCR_CREATED).getDate()
+				.getTime());
+		item.setLastModified(node.getProperty(JcrConstants.JCR_LASTMODIFIED)
+				.getDate().getTime());
+		item.setCreator(node.getProperty("jcr:createdBy").getString());
+		item.setLastModifiedBy(node.getProperty("jcr:lastModifiedBy")
+				.getString());
+		return item;
 	}
 
 }

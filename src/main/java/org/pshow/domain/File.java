@@ -15,6 +15,7 @@ public class File {
 	private Date lastModified;
 	private String creator;
 	private String lastModifiedBy;
+	private String encoding;
 
 	public String getName() {
 		return name;
@@ -94,5 +95,13 @@ public class File {
 
 	public void setLastModifiedBy(String lastModifiedBy) {
 		this.lastModifiedBy = lastModifiedBy;
+	}
+
+	public String getEncoding() {
+		return encoding;
+	}
+
+	public void setEncoding(String encoding) {
+		this.encoding = encoding;
 	}
 }

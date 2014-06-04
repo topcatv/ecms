@@ -25,15 +25,23 @@ Ext.define('ECM.view.content.HistoryWindow', {
 		        tbar : [{
 		    		text : '查看',
 		    		iconCls : 'fa fa-eye',
-		    		action : 'delete'
+		    		action : 'view'
 		    	}, {
 		    		text : '恢复',
 		    		iconCls : 'fa fa-undo',
-		    		action : 'show_history'
+		    		action : 'restore'
 		    	}],
 		        columns: [{
 		            header: "版本号",
-		            dataIndex: 'name'
+		            dataIndex: 'name',
+		            renderer: function(value, metaData, record, row, col, store, gridView){
+		                var name = record.get('name');
+		                if(name == 'jcr:rootVersion') {
+		                	return 'base';
+		                } else {
+		                	return name
+		                }
+		            }
 		        }, {
 		            header: "版本标签",
 		            dataIndex: 'label'

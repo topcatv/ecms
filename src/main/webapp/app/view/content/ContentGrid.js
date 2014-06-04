@@ -18,6 +18,10 @@ Ext.define('ECM.view.content.ContentGrid', {
 			action : 'createFolder'
 		}]
 	}, {
+		text : '修改',
+		iconCls : 'fa fa-edit',
+		action : 'edit'
+	}, {
 		text : '删除',
 		iconCls : 'fa fa-trash-o',
 		action : 'delete'
@@ -61,6 +65,9 @@ Ext.define('ECM.view.content.ContentGrid', {
                 	}
                 	if(mimeType.search("powerpoint") != -1){
                 		return '<i class="fa fa-file-powerpoint-o"></i>'
+                	}
+                	if(mimeType.search("text") != -1){
+                		return '<i class="fa fa-file-text-o"></i>'
                 	}
                     return '<i class="fa fa-file"></i>';
                 }

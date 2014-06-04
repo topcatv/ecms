@@ -4,12 +4,14 @@
 package org.pshow.controller;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +20,7 @@ import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.mvc.annotation.AdaptBy;
 import org.nutz.mvc.annotation.At;
 import org.nutz.mvc.annotation.GET;
+import org.nutz.mvc.annotation.Ok;
 import org.nutz.mvc.annotation.POST;
 import org.nutz.mvc.annotation.PUT;
 import org.nutz.mvc.annotation.Param;
@@ -106,14 +109,36 @@ public class ContentController {
 		success.put("history", history);
 		return success;
 	}
-	
+
 	@At("/full_text")
 	@GET
-	public Result fullText(String parent, String keywords, HttpSession session) throws ItemNotFoundException, RepositoryException{
-		ArrayList<File> items = contentService.fullText(parent, keywords, session);
+	public Result fullText(String parent, String keywords, HttpSession session)
+			throws ItemNotFoundException, RepositoryException {
+		ArrayList<File> items = contentService.fullText(parent, keywords,
+				session);
 		SuccessResult success = new SuccessResult();
 		success.put("children", items);
 		return success;
+	}
+
+	@At("/restore")
+	@POST
+	public Result restore(String id, String versionName, HttpSession session)
+			throws ItemNotFoundException, RepositoryException, IOException {
+		contentService.restore(id, versionName, session);
+		SuccessResult success = new SuccessResult();
+		return success;
+	}
+
+	@At("/stream")
+	@GET
+	@Ok("raw:stream")
+	public InputStream getStream(String id, HttpSession session, HttpServletResponse response)
+			throws ItemNotFoundException, RepositoryException {
+		File f = contentService.getFile(id, session);
+		response.setContentType(f.getMimeType());
+		response.setCharacterEncoding(f.getEncoding());
+		return f.getStream();
 	}
 
 }

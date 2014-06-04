@@ -3,6 +3,7 @@
   - ps:size (long)
   - ps:name (string) mandatory
   - ps:mimeType (string)
+  - ps:encoding (string)
 [ps:folder] > nt:hierarchyNode, mix:lastModified
   + * (nt:hierarchyNode) VERSION
   - ps:name (string) mandatory
