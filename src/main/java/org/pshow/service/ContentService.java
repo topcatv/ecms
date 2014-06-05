@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.activation.FileTypeMap;
 import javax.activation.MimetypesFileTypeMap;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
@@ -152,10 +151,6 @@ public class ContentService {
 		System.out.println("fileName: " + fileName);
 		System.out.println(file.getName());
 		System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-		FileTypeMap fileTypeMap = MimetypesFileTypeMap.getDefaultFileTypeMap();
-		String mimeType = fileTypeMap.getContentType("a.doc");
-		if (mimeType == null)
-			mimeType = "application/octet-stream";
 
 		Session jcrSession = getJcrSession(session);
 		VersionManager versionManager = jcrSession.getWorkspace()
@@ -166,25 +161,21 @@ public class ContentService {
 			fileNode.addMixin(NodeType.MIX_VERSIONABLE);
 		}
 
-		// TODO 需要定义常量
-		fileNode.setProperty("ps:size", file.length());
-		fileNode.setProperty("ps:name", fileName);
-		fileNode.setProperty("ps:mimeType", mimeType);
+		String mimeType = getMimetype(file);
+		fillMainNode(fileName, file, fileNode, mimeType);
 
 		Node resNode = fileNode.addNode("ps:content", NodeType.NT_RESOURCE);
-		resNode.setProperty(JcrConstants.JCR_MIMETYPE, mimeType);
-		if (mimeType.contains("text")) {
-			String charset = SimpleCharsetDetector.detectCharset(new FileInputStream(file));
-			fileNode.setProperty("ps:encoding", charset);
-			resNode.setProperty(JcrConstants.JCR_ENCODING, charset);
-		} else {
-			fileNode.setProperty("ps:encoding", "UTF-8");
-			resNode.setProperty(JcrConstants.JCR_ENCODING, "UTF-8");
-		}
-		resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(new FileInputStream(file)));
+		fillResourceNode(file, fileNode, mimeType, resNode);
 
 		jcrSession.save();
 		versionManager.checkpoint(fileNode.getPath());
+	}
+
+	private String getMimetype(java.io.File file) {
+		String mimeType = mimetypesFileTypeMap.getContentType(file);
+		if (mimeType == null)
+			mimeType = "application/octet-stream";
+		return mimeType;
 	}
 
 	public void deteleContent(String[] ids, HttpSession session)
@@ -253,28 +244,41 @@ public class ContentService {
 					destAbsPath.replaceAll("//", "/"));
 		}
 		if (file != null && file.exists()) {
-			String mimeType = mimetypesFileTypeMap.getContentType(file);
-			if (mimeType == null)
-				mimeType = "application/octet-stream";
+			String mimeType = getMimetype(file);
 
-			// TODO 需要定义常量
-			fileNode.setProperty("ps:size", file.length());
-			fileNode.setProperty("ps:mimeType", mimeType);
+			fillMainNode(fileName, file, fileNode, mimeType);
 
 			Node resNode = fileNode.getNode("ps:content");
-			resNode.setProperty(JcrConstants.JCR_MIMETYPE, mimeType);
-			if (mimeType.contains("text")) {
-				String charset = SimpleCharsetDetector.detectCharset(new FileInputStream(file));
-				fileNode.setProperty("ps:encoding", charset);
-				resNode.setProperty(JcrConstants.JCR_ENCODING, charset);
-			} else {
-				fileNode.setProperty("ps:encoding", "UTF-8");
-				resNode.setProperty(JcrConstants.JCR_ENCODING, "UTF-8");
-			}
-			resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(new FileInputStream(file)));
+			fillResourceNode(file, fileNode, mimeType, resNode);
 		}
 		jcrSession.save();
 		versionManager.checkin(fileNode.getPath());
+	}
+
+	private void fillResourceNode(java.io.File file, Node fileNode,
+			String mimeType, Node resNode) throws ValueFormatException,
+			VersionException, LockException, ConstraintViolationException,
+			RepositoryException, IOException, FileNotFoundException {
+		resNode.setProperty(JcrConstants.JCR_MIMETYPE, mimeType);
+		if (mimeType.contains("text")) {
+			SimpleCharsetDetector simpleCharsetDetector = new SimpleCharsetDetector();
+			String charset = simpleCharsetDetector.guessFileEncoding(file);
+			fileNode.setProperty("ps:encoding", charset);
+			resNode.setProperty(JcrConstants.JCR_ENCODING, charset);
+		} else {
+			fileNode.setProperty("ps:encoding", "UTF-8");
+			resNode.setProperty(JcrConstants.JCR_ENCODING, "UTF-8");
+		}
+		resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(new FileInputStream(file)));
+	}
+
+	private void fillMainNode(String fileName, java.io.File file, Node fileNode,
+			String mimeType) throws ValueFormatException, VersionException,
+			LockException, ConstraintViolationException, RepositoryException {
+		// TODO 需要定义常量
+		fileNode.setProperty("ps:size", file.length());
+		fileNode.setProperty("ps:name", fileName);
+		fileNode.setProperty("ps:mimeType", mimeType);
 	}
 
 	public void updateFolder(String id, String name, HttpSession session)
@@ -292,15 +296,11 @@ public class ContentService {
 			RepositoryException {
 		Session jcrSession = getJcrSession(session);
 		ArrayList<File> items = new ArrayList<File>();
-		String sql = "SELECT t.* FROM [nt:hierarchyNode] as t INNER JOIN [nt:resource] AS c ON ISCHILDNODE(c, t) WHERE CONTAINS(t.*, '%s') or CONTAINS(c.*, '%s')";
+		String sql = "SELECT t.* FROM [nt:hierarchyNode] as t INNER JOIN [nt:resource] AS c ON ISCHILDNODE(c, t) WHERE CONTAINS(t.*, '%s') OR CONTAINS(c.*, '%s')";
 		QueryManager queryManager = jcrSession.getWorkspace().getQueryManager();
 		Query query = queryManager.createQuery(String.format(sql, keywords, keywords),
 				Query.JCR_SQL2);
 		QueryResult result = query.execute();
-		String[] selectorNames = result.getSelectorNames();
-		for (String string : selectorNames) {
-			System.out.println("selectorNames: "+string);
-		}
 		RowIterator rows = result.getRows();
 		while (rows.hasNext()) {
 			Node nextNode = rows.nextRow().getNode("t");

@@ -165,17 +165,14 @@ Ext.define('ECM.controller.Content', {
 	fulltext : function(field, e){
 		if (e.getKey() == e.ENTER) {
             var keywords = field.getValue();
-            Ext.Ajax.request({
-                url: 'content/full_text',
-                params: { keywords: keywords },
-                method: 'GET',
-                success: function (response, options) {
-                    Ext.MessageBox.alert('成功', '从服务端获取结果: ' + response.responseText);
-                },
-                failure: function (response, options) {
-                    Ext.MessageBox.alert('失败', '请求超时或网络故障,错误编号：' + response.status);
-                }
-            });
+            var url = this.getStore('Content').getProxy().url;
+            this.getStore('Content').getProxy().url = 'content/full_text'
+            this.getStore('Content').reload({
+				params : {
+					keywords : keywords
+				}
+			});
+            this.getStore('Content').getProxy().url = url;
         }
 	},
 	updateFile : function(button) {

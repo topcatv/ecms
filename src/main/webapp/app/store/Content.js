@@ -4,9 +4,7 @@ Ext.define('ECM.store.Content', {
 
 	proxy : {
 		type : 'ajax',
-		api : {
-			read : 'content/children'
-		},
+		url : 'content/children',
 		reader : {
 			type : 'json',
 			root : 'children',
