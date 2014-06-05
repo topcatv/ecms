@@ -1,12 +1,9 @@
 Ext.define('ECM.view.user.List', {
 	extend : 'Ext.grid.Panel',
 	alias : 'widget.userlist',
-
 	title : 'All Users',
 	store : 'Users',
-
 	initComponent : function() {
-
 		this.columns = [{
 			header : 'Name',
 			dataIndex : 'name',
@@ -16,7 +13,6 @@ Ext.define('ECM.view.user.List', {
 			dataIndex : 'email',
 			flex : 1
 		}];
-
 		this.callParent(arguments);
 	}
 });
