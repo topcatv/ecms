@@ -109,6 +109,16 @@ public class ContentController {
 		success.put("history", history);
 		return success;
 	}
+	
+	@At("/version")
+	@GET
+	public Result getVersion(String id, String versionName, HttpSession session)
+			throws ItemNotFoundException, RepositoryException, IOException {
+		File f = contentService.getVersion(id, versionName, session);
+		SuccessResult success = new SuccessResult();
+		success.put("file", f);
+		return success;
+	}
 
 	@At("/full_text")
 	@GET

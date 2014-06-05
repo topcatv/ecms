@@ -65,6 +65,9 @@ Ext.define('ECM.controller.Content', {
 			"history_window button[action=restore]" : {
 				click : this.restore
 			},
+			"history_window button[action=view]" : {
+				click : this.viewVersion
+			},
 			'create_folder_window button[action=create]' : {
 				click : this.createFolder
 			},
@@ -100,6 +103,28 @@ Ext.define('ECM.controller.Content', {
 			detail.update(record.getData());
 			detail.show();
 		}
+	},
+	viewVersion : function(button){
+		var grid = button.up('grid'), cm = grid.getSelectionModel(), seleted = cm.getLastSelected();
+		var versionName = seleted.get('name');
+		var id = this._getGridSelectedIds()[0];
+		var detail = this.getDetailWindow();
+		Ext.Ajax.request({
+			url: 'content/version',
+			params: {'id': id, 'versionName': versionName},
+			method: 'GET',
+			success: function(response, opts) {
+				var obj = Ext.decode(response.responseText);
+				console.dir(obj);
+				detail.update(obj.file);
+				detail.show();
+			},
+			failure: function(response, opts) {
+				var result = Ext.decode(response.responseText);
+				console.log('server-side failure with status code ' + response.status);
+				Ext.Msg.alert("提示信息",result.data);
+			}
+		});
 	},
 	restore : function(button){
 		var grid = button.up('grid'), cm = grid.getSelectionModel(), seleted = cm.getLastSelected();

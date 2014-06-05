@@ -19,6 +19,7 @@ import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.ValueFormatException;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
@@ -94,28 +95,35 @@ public class ContentService {
 		NodeIterator nodes = result.getNodes();
 		while (nodes.hasNext()) {
 			Node nextNode = nodes.nextNode();
-			File item = new File();
-			item.setId(nextNode.getIdentifier());
-			item.setName(nextNode.getProperty("ps:name").getString());
-			boolean isFolder = nextNode.isNodeType("ps:folder");
-			item.setFolder(isFolder);
-			if (!isFolder) {
-				item.setSize(nextNode.getProperty("ps:size").getLong());
-				item.setMimeType(nextNode.getProperty(
-						"ps:content/" + JcrConstants.JCR_MIMETYPE).getString());
-				item.setEncoding(nextNode.getProperty("ps:encoding").getString());
-			}
-			item.setCreated(nextNode.getProperty(JcrConstants.JCR_CREATED)
-					.getDate().getTime());
-			item.setLastModified(nextNode
-					.getProperty(JcrConstants.JCR_LASTMODIFIED).getDate()
-					.getTime());
-			item.setCreator(nextNode.getProperty("jcr:createdBy").getString());
-			item.setLastModifiedBy(nextNode.getProperty("jcr:lastModifiedBy")
-					.getString());
-			items.add(item);
+			items.add(convertToFile(nextNode));
 		}
 		return items;
+	}
+
+	private File convertToFile(Node nextNode) throws RepositoryException,
+			ValueFormatException, PathNotFoundException {
+		File item = new File();
+		item.setId(nextNode.getIdentifier());
+		item.setName(nextNode.getProperty("ps:name").getString());
+		boolean isFolder = nextNode.isNodeType("ps:folder");
+		item.setFolder(isFolder);
+		if (!isFolder) {
+			item.setSize(nextNode.getProperty("ps:size").getLong());
+			item.setMimeType(nextNode.getProperty(
+					"ps:content/" + JcrConstants.JCR_MIMETYPE).getString());
+			item.setStream(nextNode.getNode("ps:content")
+					.getProperty(JcrConstants.JCR_DATA).getBinary().getStream());
+			item.setEncoding(nextNode.getProperty("ps:encoding").getString());
+		}
+		item.setCreated(nextNode.getProperty(JcrConstants.JCR_CREATED)
+				.getDate().getTime());
+		item.setLastModified(nextNode
+				.getProperty(JcrConstants.JCR_LASTMODIFIED).getDate()
+				.getTime());
+		item.setCreator(nextNode.getProperty("jcr:createdBy").getString());
+		item.setLastModifiedBy(nextNode.getProperty("jcr:lastModifiedBy")
+				.getString());
+		return item;
 	}
 
 	public ArrayList<TreeItem> getChildrenForTree(String parent,
@@ -150,8 +158,13 @@ public class ContentService {
 			mimeType = "application/octet-stream";
 
 		Session jcrSession = getJcrSession(session);
+		VersionManager versionManager = jcrSession.getWorkspace()
+				.getVersionManager();
 		Node pNode = getNode(parent, jcrSession);
 		Node fileNode = pNode.addNode(fileName, "ps:file");
+		if (!fileNode.isNodeType(NodeType.MIX_VERSIONABLE)) {
+			fileNode.addMixin(NodeType.MIX_VERSIONABLE);
+		}
 
 		// TODO 需要定义常量
 		fileNode.setProperty("ps:size", file.length());
@@ -171,6 +184,7 @@ public class ContentService {
 		resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(new FileInputStream(file)));
 
 		jcrSession.save();
+		versionManager.checkpoint(fileNode.getPath());
 	}
 
 	public void deteleContent(String[] ids, HttpSession session)
@@ -286,25 +300,7 @@ public class ContentService {
 		NodeIterator nodes = result.getNodes();
 		while (nodes.hasNext()) {
 			Node nextNode = nodes.nextNode();
-			File item = new File();
-			item.setId(nextNode.getIdentifier());
-			item.setName(nextNode.getName());
-			boolean isFolder = nextNode.isNodeType("ps:folder");
-			item.setFolder(isFolder);
-			if (!isFolder) {
-				item.setSize(nextNode.getProperty("ps:size").getLong());
-				item.setMimeType(nextNode.getProperty(
-						"ps:content/" + JcrConstants.JCR_MIMETYPE).getString());
-			}
-			item.setCreated(nextNode.getProperty(JcrConstants.JCR_CREATED)
-					.getDate().getTime());
-			item.setLastModified(nextNode
-					.getProperty(JcrConstants.JCR_LASTMODIFIED).getDate()
-					.getTime());
-			item.setCreator(nextNode.getProperty("jcr:createdBy").getString());
-			item.setLastModifiedBy(nextNode.getProperty("jcr:lastModifiedBy")
-					.getString());
-			items.add(item);
+			items.add(convertToFile(nextNode));
 		}
 		return items;
 	}
@@ -329,27 +325,18 @@ public class ContentService {
 	public File getFile(String id, HttpSession session)
 			throws ItemNotFoundException, RepositoryException {
 		Node node = getNode(id, getJcrSession(session));
-		File item = new File();
-		item.setId(node.getIdentifier());
-		item.setName(node.getProperty("ps:name").getString());
-		boolean isFolder = node.isNodeType("ps:folder");
-		item.setFolder(isFolder);
-		if (!isFolder) {
-			item.setSize(node.getProperty("ps:size").getLong());
-			item.setMimeType(node.getProperty(
-					"ps:content/" + JcrConstants.JCR_MIMETYPE).getString());
-			item.setStream(node.getNode("ps:content")
-					.getProperty(JcrConstants.JCR_DATA).getBinary().getStream());
-			item.setEncoding(node.getProperty("ps:encoding").getString());
-		}
-		item.setCreated(node.getProperty(JcrConstants.JCR_CREATED).getDate()
-				.getTime());
-		item.setLastModified(node.getProperty(JcrConstants.JCR_LASTMODIFIED)
-				.getDate().getTime());
-		item.setCreator(node.getProperty("jcr:createdBy").getString());
-		item.setLastModifiedBy(node.getProperty("jcr:lastModifiedBy")
-				.getString());
-		return item;
+		return convertToFile(node);
+	}
+
+	public File getVersion(String id, String name, HttpSession session) throws UnsupportedRepositoryOperationException, RepositoryException {
+		Session jcrSession = getJcrSession(session);
+		VersionManager versionManager = jcrSession.getWorkspace()
+				.getVersionManager();
+		Node node = jcrSession.getNodeByIdentifier(id);
+		VersionHistory versionHistory = versionManager.getVersionHistory(node
+				.getPath());
+		Version version = versionHistory.getVersion(name);
+		return convertToFile(version.getFrozenNode());
 	}
 
 }
