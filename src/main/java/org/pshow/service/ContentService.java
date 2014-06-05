@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.activation.FileTypeMap;
 import javax.activation.MimetypesFileTypeMap;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
@@ -27,6 +28,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
+import javax.jcr.query.RowIterator;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
@@ -42,8 +44,6 @@ import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.SimpleCharsetDetector;
 import org.pshow.domain.File;
 import org.pshow.domain.TreeItem;
-
-import sun.net.www.MimeTable;
 
 @IocBean
 public class ContentService {
@@ -152,8 +152,8 @@ public class ContentService {
 		System.out.println("fileName: " + fileName);
 		System.out.println(file.getName());
 		System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-		MimeTable mt = MimeTable.getDefaultTable();
-		String mimeType = mt.getContentTypeFor(file.getName());
+		FileTypeMap fileTypeMap = MimetypesFileTypeMap.getDefaultFileTypeMap();
+		String mimeType = fileTypeMap.getContentType("a.doc");
 		if (mimeType == null)
 			mimeType = "application/octet-stream";
 
@@ -292,14 +292,18 @@ public class ContentService {
 			RepositoryException {
 		Session jcrSession = getJcrSession(session);
 		ArrayList<File> items = new ArrayList<File>();
-		String sql = "SELECT * FROM [nt:hierarchyNode] as t WHERE CONTAINS(t.*, '%s')";
+		String sql = "SELECT t.* FROM [nt:hierarchyNode] as t INNER JOIN [nt:resource] AS c ON ISCHILDNODE(c, t) WHERE CONTAINS(t.*, '%s') or CONTAINS(c.*, '%s')";
 		QueryManager queryManager = jcrSession.getWorkspace().getQueryManager();
-		Query query = queryManager.createQuery(String.format(sql, keywords),
+		Query query = queryManager.createQuery(String.format(sql, keywords, keywords),
 				Query.JCR_SQL2);
 		QueryResult result = query.execute();
-		NodeIterator nodes = result.getNodes();
-		while (nodes.hasNext()) {
-			Node nextNode = nodes.nextNode();
+		String[] selectorNames = result.getSelectorNames();
+		for (String string : selectorNames) {
+			System.out.println("selectorNames: "+string);
+		}
+		RowIterator rows = result.getRows();
+		while (rows.hasNext()) {
+			Node nextNode = rows.nextRow().getNode("t");
 			items.add(convertToFile(nextNode));
 		}
 		return items;
