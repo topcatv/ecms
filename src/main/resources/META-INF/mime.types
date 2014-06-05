@@ -1,7 +1,7 @@
 # comments begin with a '#'
 # the format is <mime type> <space separated file extensions>
 # for example:
-text/plain txt text TXT
+text/plain txt text TXT log LOG
 # this would map file.txt, file.text, and file.TXT to
 # the mime type "text/plain"
 
