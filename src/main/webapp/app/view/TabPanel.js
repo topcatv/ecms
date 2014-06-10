@@ -1,11 +1,14 @@
 Ext.define('ECM.view.TabPanel', {
 	extend : 'Ext.tab.Panel',
-	title : 'User Info',
+	title : '',
 	alias : 'widget.ecmTabPanel',
 	defaults : {
-		bodyStyle : 'padding:15px'
+		//bodyStyle : 'padding:15px'
 	},
-	items : [ {
+	items : [{
+		title: 'test',
+		xtype: 'userlist'
+	}/*{
 		title : 'General Info',
 		xtype : 'form',
 		items : [ {
@@ -43,7 +46,7 @@ Ext.define('ECM.view.TabPanel', {
 			action : 'save',
 			disabled : true
 		} ]
-	} ],
+	} */],
 	initComponent : function() {
 		this.callParent(arguments);
 	},

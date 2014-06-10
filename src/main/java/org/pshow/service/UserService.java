@@ -23,6 +23,7 @@ import org.apache.shiro.subject.Subject;
 import org.nutz.dao.Chain;
 import org.nutz.dao.Cnd;
 import org.nutz.dao.Dao;
+import org.nutz.dao.FieldFilter;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.lang.Lang;
 import org.nutz.lang.Times;
@@ -67,8 +68,13 @@ public class UserService extends BaseService<User> {
 		return query(null, null);
 	}
 
-	public void update(User user) {
-		dao().update(user);
+	public void update(final User user) {
+		log.info(String.format("update user[%s]", user));
+		FieldFilter.create(User.class,"^locked|description$", true).run(new Atom(){
+		    public void run(){
+		    	dao().update(user);
+		    }
+		});
 	}
 	
 	public void lock(Long userid) {

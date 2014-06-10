@@ -1,7 +1,7 @@
-Ext.define('ECM.view.user.Edit', {
+Ext.define('ECM.view.user.Create', {
 	extend : 'Ext.window.Window',
-	alias : 'widget.useredit',
-	title : '编辑用户',
+	alias : 'widget.usercreate',
+	title : '添加用户',
 	layout : 'fit',
 	autoShow : true,
 	initComponent : function() {
@@ -11,8 +11,19 @@ Ext.define('ECM.view.user.Edit', {
 				name : 'id',
 				fieldLabel : 'id'
 			}, {
-				name : 'Name',
-				fieldLabel : '登录名'
+				name : 'name',
+				fieldLabel : '登录名',
+				xtype : 'textfield'
+			}, {
+				name : 'password',
+				fieldLabel : '密码',
+				xtype : 'textfield',
+				inputType: 'password'
+			}, {
+				name : 'confirmPassword',
+				fieldLabel : '确认密码',
+				xtype : 'textfield',
+				inputType: 'password'
 			}, {
 				name : 'description',
 				fieldLabel : '描述',
@@ -30,7 +41,7 @@ Ext.define('ECM.view.user.Edit', {
 
 		this.buttons = [ {
 			text : '保存',
-			action : 'save'
+			action : 'addUser'
 		}, {
 			text : '取消',
 			scope : this,

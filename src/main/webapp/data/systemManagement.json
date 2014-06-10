@@ -1,0 +1,20 @@
+{
+	"success": true,
+	"functions": [
+		{
+			'id': 'userManagement',
+			'text' : "用户管理",
+			'leaf' : true
+		}, {
+			'id': 'roleManagement',
+			'text' : "角色管理",
+			'leaf' : true
+		}, {
+			'text' : "功能授权",
+			'leaf' : true
+		}, {
+			'text' : "数据授权",
+			'leaf' : true
+		}
+	]
+}

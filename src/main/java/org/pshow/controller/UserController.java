@@ -14,6 +14,7 @@ import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.mvc.annotation.At;
+import org.nutz.mvc.annotation.Param;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.page.Pagination;
 import org.pshow.domain.User;
@@ -34,7 +35,7 @@ public class UserController {
 	}
 	
 	@At
-	public Result create(User user) {
+	public Result create(@Param("..") User user) {
 		userService.save(user);
 		return new SuccessResult();
 	}
