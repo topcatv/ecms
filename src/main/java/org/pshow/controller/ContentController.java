@@ -109,7 +109,7 @@ public class ContentController {
 		success.put("history", history);
 		return success;
 	}
-	
+
 	@At("/version")
 	@GET
 	public Result getVersion(String id, String versionName, HttpSession session)
@@ -131,6 +131,16 @@ public class ContentController {
 		return success;
 	}
 
+	@At("/search")
+	@GET
+	public Result search(@Param("..") SearchParameter param, HttpSession session)
+			throws ItemNotFoundException, RepositoryException {
+		ArrayList<File> items = contentService.search(param, session);
+		SuccessResult success = new SuccessResult();
+		success.put("children", items);
+		return success;
+	}
+
 	@At("/restore")
 	@POST
 	public Result restore(String id, String versionName, HttpSession session)
@@ -143,8 +153,9 @@ public class ContentController {
 	@At("/stream")
 	@GET
 	@Ok("raw:stream")
-	public InputStream getStream(String id, HttpSession session, HttpServletResponse response)
-			throws ItemNotFoundException, RepositoryException {
+	public InputStream getStream(String id, HttpSession session,
+			HttpServletResponse response) throws ItemNotFoundException,
+			RepositoryException {
 		File f = contentService.getFile(id, session);
 		response.setContentType(f.getMimeType());
 		response.setCharacterEncoding(f.getEncoding());

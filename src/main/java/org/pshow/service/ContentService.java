@@ -4,6 +4,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +43,7 @@ import org.apache.jackrabbit.value.BinaryImpl;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.SimpleCharsetDetector;
+import org.pshow.controller.SearchParameter;
 import org.pshow.domain.File;
 import org.pshow.domain.TreeItem;
 
@@ -117,8 +120,7 @@ public class ContentService {
 		item.setCreated(nextNode.getProperty(JcrConstants.JCR_CREATED)
 				.getDate().getTime());
 		item.setLastModified(nextNode
-				.getProperty(JcrConstants.JCR_LASTMODIFIED).getDate()
-				.getTime());
+				.getProperty(JcrConstants.JCR_LASTMODIFIED).getDate().getTime());
 		item.setCreator(nextNode.getProperty("jcr:createdBy").getString());
 		item.setLastModifiedBy(nextNode.getProperty("jcr:lastModifiedBy")
 				.getString());
@@ -269,12 +271,14 @@ public class ContentService {
 			fileNode.setProperty("ps:encoding", "UTF-8");
 			resNode.setProperty(JcrConstants.JCR_ENCODING, "UTF-8");
 		}
-		resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(new FileInputStream(file)));
+		resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(
+				new FileInputStream(file)));
 	}
 
-	private void fillMainNode(String fileName, java.io.File file, Node fileNode,
-			String mimeType) throws ValueFormatException, VersionException,
-			LockException, ConstraintViolationException, RepositoryException {
+	private void fillMainNode(String fileName, java.io.File file,
+			Node fileNode, String mimeType) throws ValueFormatException,
+			VersionException, LockException, ConstraintViolationException,
+			RepositoryException {
 		// TODO 需要定义常量
 		fileNode.setProperty("ps:size", file.length());
 		fileNode.setProperty("ps:name", fileName);
@@ -298,8 +302,8 @@ public class ContentService {
 		ArrayList<File> items = new ArrayList<File>();
 		String sql = "SELECT t.* FROM [nt:hierarchyNode] as t INNER JOIN [nt:resource] AS c ON ISCHILDNODE(c, t) WHERE CONTAINS(t.*, '%s') OR CONTAINS(c.*, '%s')";
 		QueryManager queryManager = jcrSession.getWorkspace().getQueryManager();
-		Query query = queryManager.createQuery(String.format(sql, keywords, keywords),
-				Query.JCR_SQL2);
+		Query query = queryManager.createQuery(
+				String.format(sql, keywords, keywords), Query.JCR_SQL2);
 		QueryResult result = query.execute();
 		RowIterator rows = result.getRows();
 		while (rows.hasNext()) {
@@ -332,7 +336,8 @@ public class ContentService {
 		return convertToFile(node);
 	}
 
-	public File getVersion(String id, String name, HttpSession session) throws UnsupportedRepositoryOperationException, RepositoryException {
+	public File getVersion(String id, String name, HttpSession session)
+			throws UnsupportedRepositoryOperationException, RepositoryException {
 		Session jcrSession = getJcrSession(session);
 		VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
@@ -341,6 +346,60 @@ public class ContentService {
 				.getPath());
 		Version version = versionHistory.getVersion(name);
 		return convertToFile(version.getFrozenNode());
+	}
+
+	public ArrayList<File> search(SearchParameter search, HttpSession session)
+			throws RepositoryException {
+		Session jcrSession = getJcrSession(session);
+		ArrayList<File> items = new ArrayList<File>();
+		String sql = getQueryString(search);
+		System.out.println(sql);
+		QueryManager queryManager = jcrSession.getWorkspace().getQueryManager();
+		Query query = queryManager.createQuery(sql, Query.JCR_SQL2);
+		QueryResult result = query.execute();
+		NodeIterator nodes = result.getNodes();
+		while (nodes.hasNext()) {
+			Node nextNode = nodes.nextNode();
+			items.add(convertToFile(nextNode));
+		}
+		return items;
+	}
+
+	private String getQueryString(SearchParameter search) {
+		DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+		StringBuffer sb = new StringBuffer("SELECT t.* FROM [");
+		sb.append(search.isFolder() ? "ps:folder" : NodeType.NT_HIERARCHY_NODE)
+		.append("] as t WHERE");
+		if(StringUtils.isNoneBlank(search.getName())){
+			sb.append(" and t.[ps:name] like '%").append(search.getName()).append("%'");
+		}
+		if(StringUtils.isNoneBlank(search.getCreator())){
+			sb.append(" and t.[jcr:createdBy] like '%").append(search.getCreator()).append("%'");
+		}
+		if(StringUtils.isNoneBlank(search.getLastModifiedBy())){
+			sb.append(" and t.[jcr:lastModifiedBy] like '%").append(search.getLastModifiedBy()).append("%'");
+		}
+		if(null != search.getCreated_start()){
+			sb.append(" and t.[jcr:created] >= cast('").append(format.format(search.getCreated_start())).append("' as date)");
+		}
+		if(null != search.getCreated_end()){
+			sb.append(" and t.[jcr:created] <= cast('").append(format.format(search.getCreated_end())).append("' as date)");
+		}
+		if(null != search.getLastModified_start()){
+			sb.append(" and t.[jcr:lastModified] >= cast('").append(format.format(search.getLastModified_start())).append("' as date)");
+		}
+		if(null != search.getLastModified_end()){
+			sb.append(" and t.[jcr:lastModified] <= cast('").append(format.format(search.getLastModified_end())).append("' as date)");
+		}
+		
+		String sql = sb.toString();
+		if(sql.endsWith("WHERE")){
+			sql = sql.replace("WHERE", "");
+		}
+		if(sql.contains("WHERE and")){
+			sql = sql.replace("WHERE and", "WHERE");
+		}
+		return sql;
 	}
 
 }

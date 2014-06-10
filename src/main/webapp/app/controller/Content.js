@@ -3,7 +3,7 @@ Ext.define('ECM.controller.Content', {
 	stores : [ 'Content', 'ContentTree', 'Version' ],
 	models : [ 'Content', 'Version' ],
 	views : [ 'content.ContentGrid', 'content.CreateFolderWindow', 'content.UpdateFolderWindow', 'content.UpdateFileWindow',
-			'content.Tree', 'LeftContainer', 'content.CreateFileWindow', 'content.HistoryWindow', 'content.DetailWindow' ],
+			'content.Tree', 'LeftContainer', 'content.CreateFileWindow', 'content.HistoryWindow', 'content.DetailWindow', 'content.SearchWindow' ],
 	refs : [ {
 		ref : 'contentGrid',
 		selector : 'content_grid'
@@ -28,6 +28,9 @@ Ext.define('ECM.controller.Content', {
 	}, {
 		ref : 'detailWindow',
 		selector : 'detail_window'
+	}, {
+		ref : 'searchWindow',
+		selector : 'search_window'
 	} ],
 
 	init : function() {
@@ -37,6 +40,7 @@ Ext.define('ECM.controller.Content', {
 		Ext.create('ECM.view.content.UpdateFileWindow', {});
 		Ext.create('ECM.view.content.HistoryWindow', {});
 		Ext.create('ECM.view.content.DetailWindow', {});
+		Ext.create('ECM.view.content.SearchWindow', {});
 		this.control({
 			'create_file_window button[action=upload]' : {
 				click : this.createFile
@@ -55,6 +59,9 @@ Ext.define('ECM.controller.Content', {
 			},
 			'content_grid button[action=show_history]' : {
 				click : this.show_history
+			},
+			'content_grid button[action=search]' : {
+				click : this.showSearch
 			},
 			'content_grid textfield' : {
 				specialkey : this.fulltext
@@ -77,6 +84,9 @@ Ext.define('ECM.controller.Content', {
 			'update_file_window button[action=file_modify]' : {
 				click : this.updateFile
 			},
+			'search_window button[action=search]' : {
+				click : this.search
+			},
 			'contenttree' : {
 				render : function(t, eOpts) {
 					tree = t;
@@ -91,6 +101,32 @@ Ext.define('ECM.controller.Content', {
 		});
 	},
 	
+	search: function(button){
+		var win = button.up('window'), form = win.down('form');
+		var _this = this;
+		var content_store = this.getStore('Content');
+		form.submit({
+			url : 'content/search',
+			method : 'GET',
+			type : 'ajax',
+			waitMsg : '正在查询...',
+			success : function(f, action) {
+				var result = Ext.decode(action.response.responseText);
+				console.debug(result.children);
+				win.hide();
+				content_store.removeAll();
+				content_store.add(result.children);
+			},
+			failure : function(f, action) {
+				var result = Ext.decode(action.response.responseText);
+				Ext.Msg.alert("提示信息",result.data);
+			}
+		});
+	},
+	showSearch:function(button){
+		var searchWin = this.getSearchWindow();
+		searchWin.show();
+	},	
 	detail: function(grid, record){
 		if(record.get("isFolder")){
 			this.getStore('Content').reload({
