@@ -21,14 +21,12 @@ Ext.define('ECM.controller.SystemManagement', {
 		var id = record.get('id');
 		if (id == 'userManagement') {
 			var tabPanel = Ext.getCmp('mainTab');
-			var userTab = this.getUserList();
-			if(tabPanel.contains(userTab)){
-				tabPanel.setActiveTab(userTab);
-			} else {
-				userTab.getStore().load();
-				tabPanel.add(userTab);
-				tabPanel.setActiveTab(userTab);
+			var userList = this.getUserList();
+			if(!tabPanel.contains(userList)){
+				userList.getStore().load();
+				tabPanel.add(userList);
 			}
+			tabPanel.setActiveTab(userList);
 		}
 	}
 });
