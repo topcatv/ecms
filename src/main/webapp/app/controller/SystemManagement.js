@@ -1,12 +1,16 @@
 Ext.define('ECM.controller.SystemManagement', {
 	extend : 'Ext.app.Controller',
-	stores : [ 'SystemManagement' ],
-	views : [ 'SystemManagement' ],
+	stores : [ 'SystemManagement', 'Users' ],
+	views : [ 'SystemManagement', 'user.List' ],
 	refs : [ {
 		ref : 'systemManagement',
 		selector : 'systemManagement'
+	}, {
+		ref : 'userList',
+		selector : 'userlist'
 	} ],
 	init : function() {
+		Ext.create('ECM.view.user.List', {});
 		this.control({
 			'systemManagement' : {
 				itemclick : this.itemclick,
@@ -14,17 +18,17 @@ Ext.define('ECM.controller.SystemManagement', {
 		});
 	},
 	itemclick : function(view, record, item, index, e) {
-		console.debug('systemManagement itemclick');
 		var id = record.get('id');
 		if (id == 'userManagement') {
-			var tabPanel = Ext.getCmp('ecmTabPanel');
-			var userTab = tabPanel.getComponent('userTab');
-			if (!userTab) {
-				userTab = Ext.create('ECM.view.user.List', {});
+			var tabPanel = Ext.getCmp('mainTab');
+			var userTab = this.getUserList();
+			if(tabPanel.contains(userTab)){
+				tabPanel.setActiveTab(userTab);
+			} else {
 				userTab.getStore().load();
 				tabPanel.add(userTab);
+				tabPanel.setActiveTab(userTab);
 			}
-			tabPanel.setActiveTab(userTab);
 		}
 	}
 });
