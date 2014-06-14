@@ -1,6 +1,7 @@
 package org.pshow.controller;
 
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 import javax.jcr.RepositoryException;
@@ -17,6 +18,7 @@ import org.nutz.mvc.annotation.At;
 import org.nutz.mvc.annotation.Param;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.page.Pagination;
+import org.pshow.domain.Role;
 import org.pshow.domain.User;
 import org.pshow.mvc.Result;
 import org.pshow.mvc.SuccessResult;
@@ -41,20 +43,20 @@ public class UserController {
 	}
 	
 	@At
-	public Result delete(User user) {
-		userService.delete(user);
+	public Result delete(String ids) {
+		userService.delete(ids);
 		return new SuccessResult();
 	}
 	
 	@At
-	public Result lock(Long userId) {
-		userService.lock(userId);
+	public Result lock(String ids) {
+		userService.lock(ids);
 		return new SuccessResult();
 	}
 	
 	@At
-	public Result unlock(Long userId) {
-		userService.unlock(userId);
+	public Result unlock(String ids) {
+		userService.unlock(ids);
 		return new SuccessResult();
 	}
 	
@@ -64,6 +66,21 @@ public class UserController {
 		return new SuccessResult();
 	}
 	
+	@At
+	public List<Role> getUnselectedRoleList(Long userId) {
+		return userService.getUnselectedRoleList(userId);
+	}
+	
+	@At
+	public List<Role> getSelectedRoleList(Long userId) {
+		return userService.getSelectedRoleList(userId);
+	}
+	
+	@At
+	public Result updateRole(Long userId, String addRoleIds, String removeRoleIds) {
+		userService.updateRole(userId, addRoleIds, removeRoleIds);
+		return new SuccessResult();
+	}
 
 	@At
 	public Map<String, String> regist(final User user) {
