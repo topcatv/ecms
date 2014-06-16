@@ -19,7 +19,7 @@ Ext.define('ECM.view.Main', {
 			width : '20%'
 		}, {
 			region : 'center',
-			xtype : 'content_grid'
+			xtype : 'ecmTabPanel'
 		}, {
 			region : 'north',
 			xtype : 'panel',
