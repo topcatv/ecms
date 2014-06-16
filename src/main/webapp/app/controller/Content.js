@@ -376,6 +376,7 @@ Ext.define('ECM.controller.Content', {
 		});
 	},
 	tree_itemSelected : function(row, record, index, eOpts) {
+		Ext.getCmp('mainTab').setActiveTab(this.getContentGrid());
 		this.getStore('Content').load({
 			params : {
 				parent : record.get('id')
