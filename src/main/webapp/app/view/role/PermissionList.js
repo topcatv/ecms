@@ -1,16 +1,16 @@
-Ext.define('ECM.view.user.RoleList', {
+Ext.define('ECM.view.role.PermissionList', {
 	extend : 'Ext.window.Window',
-	alias : 'widget.win_userRoleList',
-	title : '用户角色',
+	alias : 'widget.win_rolePermissionList',
+	title : '用户权限',
 	layout : {
 		type : 'hbox'
 	},
 	autoHeight : true,
 	items : [ {
 		xtype : 'gridpanel',
-		itemId : 'unselectedRoles',
-		store : 'UnselectedRole',
-		title : '所有角色',
+		itemId : 'unselectedPermissions',
+		store : 'UnselectedPermission',
+		title : '所有权限',
 		width : 300,
 		height : 500,
 		selModel : {
@@ -22,7 +22,7 @@ Ext.define('ECM.view.user.RoleList', {
 			dataIndex : 'id',
 			hidden : true
 		}, {
-			header : '角色名',
+			header : '权限名',
 			dataIndex : 'name'
 
 		}, {
@@ -42,17 +42,17 @@ Ext.define('ECM.view.user.RoleList', {
 		items : [ {
 			xtype : 'button',
 			text : '>',
-			action : 'addRole'
+			action : 'addPermission'
 		}, {
 			xtype : 'button',
 			text : '<',
-			action : 'removeRole'
+			action : 'removePermission'
 		} ]
 	}, {
 		xtype : 'gridpanel',
-		itemId : 'selectedRoles',
-		title : '已分配角色',
-		store : 'SelectedRole',
+		itemId : 'selectedPermissions',
+		title : '已分配权限',
+		store : 'SelectedPermission',
 		width : 300,
 		height : 500,
 		selModel : {
@@ -63,14 +63,14 @@ Ext.define('ECM.view.user.RoleList', {
 			header : 'id',
 			dataIndex : 'id'
 		}, {
-			header : '角色名',
+			header : '权限名',
 			dataIndex : 'name'
 		} ]
 	} ],
 	buttonAlign : 'center',
 	buttons : [ {
 		text : '保存',
-		action : 'updateRole'
+		action : 'updatePermission'
 	}, {
 		text : '取消',
 		scope : this,

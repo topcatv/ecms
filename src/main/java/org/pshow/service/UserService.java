@@ -1,7 +1,6 @@
 package org.pshow.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.jcr.LoginException;
@@ -214,8 +213,8 @@ public class UserService extends BaseService<User> {
 		Trans.exec(new Atom(){
 			public void run(){
 				User user = fetch(userId);
+				if(StringUtils.isNotEmpty(addRoleIds)) {
 				String[] idArray = addRoleIds.split(",");
-				if(!Lang.isEmptyArray(idArray)) {
 					List<Role> roleList = new ArrayList<Role>();
 					for (String id : idArray) {
 						Long lId = Long.valueOf(id);
@@ -226,9 +225,12 @@ public class UserService extends BaseService<User> {
 					user.setRoles(roleList);
 					dao().insertRelation(user, "roles");
 				}
-				String[] removeIdArray = removeRoleIds.split(",");
-				dao().clear("system_user_role",
-						Cnd.where("userid", "=", userId).and("roleid", "in", Arrays.asList(removeIdArray)));
+				if (StringUtils.isNotEmpty(removeRoleIds)) {
+					String[] removeIdArray = removeRoleIds.split(",");
+					log.debug("removeSize: " + removeIdArray.length);
+					dao().clear("ecm_user_role",
+							Cnd.where("userid", "=", userId).and("roleid", "in", Lang.array2array(removeIdArray, Long.class)));
+				}
 			}
 		});
 	}

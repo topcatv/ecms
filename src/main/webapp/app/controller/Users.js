@@ -43,8 +43,14 @@ Ext.define('ECM.controller.Users', {
 			'win_userRoleList #btnPanel button[action=addRole]' : {
 				click : this.addRole
 			},
+			'win_userRoleList #btnPanel button[action=removeRole]' : {
+				click : this.removeRole
+			},
 			'win_userRoleList button[action=updateRole]' : {
 				click : this.updateRole
+			},
+			'win_userRoleList button[action=closeWin]' : {
+				click : this.closeWin
 			}
  		});
 	},
@@ -192,6 +198,8 @@ Ext.define('ECM.controller.Users', {
 	},
 	showRoles : function(button, e, eOpts) {
 		console.debug('showRoles button click');
+		this.addedRoles = [];
+		this.removedRoles = [];
 		var userList = this.getUserList();
 		var selection = userList.getSelectionModel().getSelection();
 		var count = selection.length;
@@ -205,7 +213,7 @@ Ext.define('ECM.controller.Users', {
 			});
 		} else {
 			var _this = this;
-			var roleList = _this.getRoleList();
+			var roleList = Ext.widget('win_userRoleList');//_this.getRoleList();
 			var unSelectionList = roleList.down('#unselectedRoles');
 			var userId = _this._getGridSelectedIds();
 			unSelectionList.getStore().load({params: {userId : userId}});
@@ -226,7 +234,7 @@ Ext.define('ECM.controller.Users', {
 		values = form.getValues();
 
 		record.set(values);
-		win.close();
+		win.hide();
 		this.getUsersStore().sync();
 	},
 	_getGridSelectedIds : function(){
@@ -245,34 +253,63 @@ Ext.define('ECM.controller.Users', {
 		unSelectionList.getStore().remove(unList);
 		var selectionList = roleList.down('#selectedRoles');
 		selectionList.getStore().add(unList);
+		var _this = this;
+		Ext.Array.forEach(unList, function(record){
+			if (!Ext.Array.contains(_this.removedRoles, record)) {
+				_this.addedRoles.push(record);
+			} else {
+				Ext.Array.remove(_this.removedRoles, record);
+			}
+		});
+		console.dir(_this.addedRoles);
+		console.dir(_this.removedRoles);
+	}, 
+	removeRole : function() {
+		console.debug('removeRole click');
+		var roleList = this.getRoleList();
+		var unSelectionList = roleList.down('#unselectedRoles');
+		var selectionList = roleList.down('#selectedRoles');
+		var removeList = selectionList.getSelectionModel().getSelection();
+		unSelectionList.getStore().add(removeList);
+		selectionList.getStore().remove(removeList);
+		var _this = this;
+		Ext.Array.forEach(removeList, function(record){
+			if (!Ext.Array.contains(_this.addedRoles, record)) {
+				_this.removedRoles.push(record);
+			} else {
+				Ext.Array.remove(_this.addedRoles, record);
+			}
+		});
+		console.dir(_this.addedRoles);
+		console.dir(_this.removedRoles);
 	}, 
 	updateRole : function(button) {
 		console.debug('updateRole click');
 		var _this = this;
-		var roleList = _this.getRoleList();
-		var selectionList = roleList.down('#selectedRoles');
-		var store = selectionList.getStore();
-		var newRecords = store.getNewRecords();
 		var addRoleIds = [];
-		Ext.Array.forEach(newRecords, function(modle){
+		Ext.Array.forEach(this.addedRoles, function(modle){
 			addRoleIds.push(modle.get('id'));
 		});
-		var removedRecords = store.getRemovedRecords(); 
 		var removeRoleIds = [];
-		Ext.Array.forEach(removeRoleIds, function(modle){
-			removedRecords.push(modle.get('id'));
+		Ext.Array.forEach(this.removedRoles, function(modle){
+			removeRoleIds.push(modle.get('id'));
 		});
 		var userId = _this._getGridSelectedIds();
-		Ext.Ajax.request({
-			url: 'user/updateRole',
-			params: {'userId' : userId, 'addRoleIds': addRoleIds.join(','), 'removeRoleIds' : removeRoleIds.join(',')},
-			method: 'POST',
-			success: function(response, opts) {
-				var obj = Ext.decode(response.responseText);
-				console.dir(obj);
-				_this.getUserList().getStore().load();
-			}
-		});
-		button.up('window').close();
+		if (addRoleIds.length != 0 || removeRoleIds.length != 0) {
+			Ext.Ajax.request({
+				url: 'user/updateRole',
+				params: {'userId' : userId, 'addRoleIds': addRoleIds.join(','), 'removeRoleIds' : removeRoleIds.join(',')},
+				method: 'POST',
+				success: function(response, opts) {
+					var obj = Ext.decode(response.responseText);
+					console.dir(obj);
+					_this.getUserList().getStore().load();
+				}
+			});
+		}
+		button.up('window').hide();
+	},
+	closeWin : function(button) {
+		button.up('window').hide();
 	}
 });
