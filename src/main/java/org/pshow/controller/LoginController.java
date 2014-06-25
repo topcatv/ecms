@@ -2,16 +2,13 @@ package org.pshow.controller;
 
 import javax.jcr.LoginException;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.servlet.http.HttpSession;
 
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.subject.Subject;
 import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.mvc.annotation.At;
+import org.nutz.mvc.annotation.Ok;
 import org.nutz.mvc.annotation.Param;
-import org.pshow.common.JackrabbitUtils;
 import org.pshow.domain.User;
 import org.pshow.mvc.Result;
 import org.pshow.mvc.SuccessResult;
@@ -32,14 +29,8 @@ public class LoginController {
 	}
 
 	@At
+	@Ok("redirect:/index.html")
 	public void logout(HttpSession session) {
-		Subject currentUser = SecurityUtils.getSubject();
-		if (currentUser.isAuthenticated()) {
-			Session jcrSession = JackrabbitUtils.getJcrSessionFromHttpSession(session);
-			if (jcrSession != null) {
-				jcrSession.logout();
-			}
-			currentUser.logout();
-		}
+		session.invalidate();
 	}
 }

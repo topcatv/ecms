@@ -1,6 +1,7 @@
 package org.pshow.service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.jcr.LoginException;
@@ -8,6 +9,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.security.Privilege;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +26,7 @@ import org.nutz.dao.Chain;
 import org.nutz.dao.Cnd;
 import org.nutz.dao.Dao;
 import org.nutz.dao.FieldFilter;
+import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.lang.Lang;
 import org.nutz.lang.Times;
@@ -37,7 +40,10 @@ import org.pshow.domain.User;
 
 @IocBean(args = { "refer:dao" })
 public class UserService extends BaseService<User> {
+	public static final String SUBJECT = "subject";
 	private final static Logger log = Logger.getLogger(UserService.class);
+	@Inject
+	private PermissionService permissionService;
 	
 	public UserService(Dao dao) {
 		super(dao);
@@ -51,6 +57,7 @@ public class UserService extends BaseService<User> {
 			token.setRememberMe(false);
 			currentUser.login(token);
 			session.setAttribute(JackrabbitUtils.JCR_SESSION, loginToJcr(user));
+			session.setAttribute(SUBJECT, currentUser);
 		}
 		return user;
 	}
@@ -126,14 +133,6 @@ public class UserService extends BaseService<User> {
 		log.info(String.format("insert user[%s]", user));
 		Trans.exec(new Atom(){
 			public void run(){
-				RandomNumberGenerator rng = new SecureRandomNumberGenerator();
-				String salt = rng.nextBytes().toBase64();
-				String hashedPasswordBase64 = new Sha256Hash(user.getPassword(), salt,
-						1024).toBase64();
-				user.setSalt(salt);
-				user.setPassword(hashedPasswordBase64);
-				dao().insert(user);
-		//		dao().insertRelation(user, "roles");
 				try {
 					Session manageSession = JackrabbitUtils.getManageSession();
 					JackrabbitSession jcrSession = (JackrabbitSession) manageSession;
@@ -141,10 +140,22 @@ public class UserService extends BaseService<User> {
 					if (userManager.getAuthorizable(user.getName()) == null) {
 						userManager.createUser(user.getName(), user.getPassword());
 					}
-					manageSession.save();
+				//保证jcr用户创建在前，否则下面的密码会被修改
+				RandomNumberGenerator rng = new SecureRandomNumberGenerator();
+				String salt = rng.nextBytes().toBase64();
+				String hashedPasswordBase64 = new Sha256Hash(user.getPassword(), salt,
+						1024).toBase64();
+				user.setSalt(salt);
+				user.setPassword(hashedPasswordBase64);
+				user.setCreateDate(new Date());
+				dao().insert(user);
+				manageSession.save();
+				//给新建的用户Root的添加子的权限
+				permissionService.authorize(manageSession.getRootNode().getIdentifier(), user.getName(), true, Privilege.JCR_ADD_CHILD_NODES);
 				} catch (RepositoryException re) {
 					throw Lang.wrapThrow(re);
 				}
+		//		dao().insertRelation(user, "roles");
 			}
 		});
 	}
@@ -261,5 +272,12 @@ public class UserService extends BaseService<User> {
 				}
 			}
 		});
+	}
+	
+	public List<User> getUsersByIds(int[] ids){
+		if(ids == null || ids.length <=0){
+			return null;
+		}
+		return dao().query(User.class, Cnd.where("id", "IN", ids));
 	}
 }
