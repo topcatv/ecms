@@ -24,6 +24,9 @@
 		<dispatcher>REQUEST</dispatcher>
         <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
+	<listener>
+		<listener-class>org.pshow.common.LogoutListener</listener-class>
+	</listener>
 	
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>

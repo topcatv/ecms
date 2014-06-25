@@ -4,10 +4,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.jcr.LoginException;
 import javax.jcr.NamespaceException;
+import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -18,7 +21,17 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
+import javax.jcr.security.AccessControlEntry;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicy;
+import javax.jcr.security.AccessControlPolicyIterator;
+import javax.jcr.security.Privilege;
 
+import org.apache.jackrabbit.api.JackrabbitSession;
+import org.apache.jackrabbit.api.security.JackrabbitAccessControlEntry;
+import org.apache.jackrabbit.api.security.JackrabbitAccessControlList;
+import org.apache.jackrabbit.api.security.principal.PrincipalManager;
+import org.apache.jackrabbit.core.security.authorization.AbstractACLTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,6 +99,62 @@ public class JCRManageControllerTest extends BaseTest {
 		} catch (RepositoryException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
+		}
+	}
+	
+	@Test
+	public void testACL() {
+		
+		try {
+			Session manageSession = JackrabbitUtils.getManageSession();
+			AccessControlManager acm = manageSession.getAccessControlManager();
+//			AccessControlPolicyIterator applicablePolicies = acm.getApplicablePolicies("/a");
+//			while (applicablePolicies.hasNext()) {
+//				AccessControlPolicy acp = applicablePolicies.nextAccessControlPolicy();
+//				JackrabbitAccessControlList jacl = (JackrabbitAccessControlList) acp;
+//				AccessControlEntry[] aces = jacl.getAccessControlEntries();
+//				for (AccessControlEntry ace : aces) {
+//					System.out.println(ace.getPrincipal().getName());
+//					Privilege[] privileges = ace.getPrivileges();
+//					for (Privilege pri : privileges) {
+//						System.out.println(pri.getName());
+//					}
+//				}
+//			}
+			Node node = manageSession.getNodeByIdentifier("01a95b0d-1d6d-403b-8030-95d62c9bcc0d");
+			String path = node.getPath();
+			System.out.println(path);
+			AccessControlPolicy[] policies = acm.getPolicies(path);
+			AccessControlPolicyIterator applicablePolicies = acm.getApplicablePolicies(path);
+			AccessControlPolicy acp = policies[0];
+			JackrabbitAccessControlList jacl = (JackrabbitAccessControlList) acp;
+//			PrincipalManager pMgr = ((JackrabbitSession) manageSession)
+//					.getPrincipalManager();
+//			Principal principal = pMgr.getPrincipal("roy");
+//			Privilege privilege = acm.privilegeFromName(Privilege.JCR_ADD_CHILD_NODES);
+//			Privilege privilege2 = acm.privilegeFromName(Privilege.JCR_NODE_TYPE_MANAGEMENT);
+//			Privilege privilege3 = acm.privilegeFromName(Privilege.JCR_MODIFY_PROPERTIES);
+//			Privilege privilege4 = acm.privilegeFromName(Privilege.JCR_VERSION_MANAGEMENT);
+//			Privilege privilege5 = acm.privilegeFromName(Privilege.JCR_REMOVE_CHILD_NODES);
+//			jacl.addEntry(principal, new Privilege[]{privilege,privilege2,privilege3,privilege4,privilege5}, true);
+//			acm.setPolicy("/", jacl);
+//			manageSession.save();
+			AccessControlEntry[] aces = jacl.getAccessControlEntries();
+			for (AccessControlEntry ace : aces) {
+				JackrabbitAccessControlEntry jace = (JackrabbitAccessControlEntry) ace;
+				System.out.println(jace.getPrincipal().getName()+" --- "+jace.isAllow());
+				Privilege[] privileges = jace.getPrivileges();
+				for (Privilege pri : privileges) {
+					System.out.println(pri.getName());
+				}
+				System.out.println("**************************************************");
+			}
+		} catch (LoginException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (RepositoryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 

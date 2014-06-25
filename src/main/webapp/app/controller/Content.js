@@ -1,9 +1,9 @@
 Ext.define('ECM.controller.Content', {
 	extend : 'Ext.app.Controller',
-	stores : [ 'Content', 'ContentTree', 'Version' ],
-	models : [ 'Content', 'Version' ],
+	stores : [ 'Content', 'ContentTree', 'Version', 'UsersForPermission' ],
+	models : [ 'Content', 'Version', 'User' ],
 	views : [ 'content.ContentGrid', 'content.CreateFolderWindow', 'content.UpdateFolderWindow', 'content.UpdateFileWindow',
-			'content.Tree', 'LeftContainer', 'content.CreateFileWindow', 'content.HistoryWindow', 'content.DetailWindow', 'content.SearchWindow' ],
+			'content.Tree', 'LeftContainer', 'content.CreateFileWindow', 'content.HistoryWindow', 'content.DetailWindow', 'content.SearchWindow', 'content.ShareWindow' ],
 	refs : [ {
 		ref : 'contentGrid',
 		selector : 'content_grid'
@@ -31,7 +31,10 @@ Ext.define('ECM.controller.Content', {
 	}, {
 		ref : 'searchWindow',
 		selector : 'search_window'
-	} ],
+	}, {
+		ref : 'shareWindow',
+		selector : 'share_window'
+	}],
 
 	init : function() {
 		Ext.create('ECM.view.content.CreateFolderWindow', {});
@@ -41,6 +44,7 @@ Ext.define('ECM.controller.Content', {
 		Ext.create('ECM.view.content.HistoryWindow', {});
 		Ext.create('ECM.view.content.DetailWindow', {});
 		Ext.create('ECM.view.content.SearchWindow', {});
+		Ext.create('ECM.view.content.ShareWindow', {});
 		this.control({
 			'create_file_window button[action=upload]' : {
 				click : this.createFile
@@ -62,6 +66,9 @@ Ext.define('ECM.controller.Content', {
 			},
 			'content_grid button[action=search]' : {
 				click : this.showSearch
+			},
+			'content_grid button[action=shareTo]' : {
+				click : this.shareTo
 			},
 			'content_grid textfield' : {
 				specialkey : this.fulltext
@@ -87,6 +94,9 @@ Ext.define('ECM.controller.Content', {
 			'search_window button[action=search]' : {
 				click : this.search
 			},
+			'share_window button[action=share]' : {
+				click : this.share
+			},
 			'contenttree' : {
 				render : function(t, eOpts) {
 					tree = t;
@@ -101,6 +111,49 @@ Ext.define('ECM.controller.Content', {
 		});
 	},
 	
+	share: function(button){
+		var grid = button.up('window').down('grid'), cm = grid.getSelectionModel(), user_seleted = cm.getSelection();
+		var content_selected = this.getContentGrid().getSelectionModel().getSelection();
+		var user_array = [];
+		var content_array = [];
+		var current_user = Ext.getDom('user_name').innerHTML;
+		var flag = false;
+		content_selected.forEach(function(element, index, array){
+			if(current_user != element.get("creator")){
+				flag = true;
+				return;
+			}
+			content_array.push(element.get("id"));
+		});
+		if(flag){
+			Ext.Msg.alert("提示信息","只能共享你创建的文档");
+			return;
+		}
+		user_seleted.forEach(function(element, index, array){
+			user_array.push(element.get('id'));
+		});
+		var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"正在共享..."});
+		myMask.show();
+		Ext.Ajax.request({
+		    url: 'permission/authorize',
+		    params: {'cids': content_array, 'uids': user_array, 'permission': 3},
+		    method: 'POST',
+		    success: function(response, opts) {
+		        var obj = Ext.decode(response.responseText);
+		        if (myMask != undefined){ myMask.hide();}
+		        Ext.Msg.alert("提示信息","共享成功");
+		    },
+		    failure: function(response, opts) {
+		    	var result = Ext.decode(response.responseText);
+		        console.log('server-side failure with status code ' + response.status);
+		        if (myMask != undefined){ myMask.hide();}
+		        Ext.Msg.alert("提示信息",result.data);
+		    }
+		});
+	},
+	shareTo: function(button){
+		this.getShareWindow().show();
+	},
 	search: function(button){
 		var win = button.up('window'), form = win.down('form');
 		var _this = this;

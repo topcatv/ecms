@@ -1,54 +1,18 @@
-Ext.define('ECM.view.content.ContentGrid', {
+Ext.define('ECM.view.privilege.ContentGrid', {
 	extend : 'Ext.grid.Panel',
-	alias : 'widget.content_grid',
+	alias : 'widget.content_grid_for_permission',
 
 	title : '文件',
-	store : "Content",
+	store : "ContentForPermission",
 	selType : 'checkboxmodel',
 	tbar : [{
-		text : '创建',
-		xtype : 'splitbutton',
-		menu : [{
-			text : '文件',
-			iconCls : 'fa fa-file',
-			action : 'createFile'
-		}, {
-			text : '文件夹',
-			iconCls : 'fa fa-folder',
-			action : 'createFolder'
-		}]
-	}, {
-		text : '修改',
-		iconCls : 'fa fa-edit',
-		action : 'edit'
-	}, {
-		text : '删除',
-		iconCls : 'fa fa-trash-o',
-		action : 'delete'
-	}, {
-		text : '查看版本历史',
-		iconCls : 'fa fa-history',
-		action : 'show_history'
-	}, {
-		text : '精确查询',
-		iconCls : 'fa fa-search',
-		action : 'search'
-	}, {
-		text : '共享给',
-		iconCls : 'fa fa-share-alt',
-		action : 'shareTo'
-	}, '->', '全文检索', {
-		xtype : 'textfield',
-		name : 'fullsearch',
-		emptyText : '请输入你要查询的关字',
-		action : 'fullsearch'
-	}, {
-		xtype : 'tbspacer',
-		width : 25
+		text : '授权',
+		iconCls : 'fa fa-key',
+		action : 'authorize'
 	}],
 	bbar : {
 		xtype : 'pagingtoolbar',
-		store : 'Content',
+		store : 'ContentForPermission',
 		displayInfo : true
 	},
 

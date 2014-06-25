@@ -30,6 +30,7 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.RowIterator;
+import javax.jcr.security.Privilege;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
@@ -40,6 +41,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.value.BinaryImpl;
+import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.SimpleCharsetDetector;
@@ -49,8 +51,10 @@ import org.pshow.domain.TreeItem;
 
 @IocBean
 public class ContentService {
-
+	
 	private static final MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
+	@Inject
+	private PermissionService permissionService;
 
 	public void createFolder(String parent, String name, HttpSession session)
 			throws ItemNotFoundException, RepositoryException,
@@ -64,6 +68,7 @@ public class ContentService {
 		Node addNode = parentNode.addNode(name, "ps:folder");
 		addNode.setProperty("ps:name", name);
 		jcrSession.save();
+		permissionService.authorize(addNode.getIdentifier(), jcrSession.getUserID(), true, Privilege.JCR_ALL);
 	}
 
 	private Node getNode(String identifier, Session jcrSession)
@@ -171,6 +176,8 @@ public class ContentService {
 
 		jcrSession.save();
 		versionManager.checkpoint(fileNode.getPath());
+		permissionService.authorize(fileNode.getIdentifier(), jcrSession.getUserID(), true, Privilege.JCR_ALL);
+		permissionService.authorize(fileNode.getIdentifier(), "everyone", false, Privilege.JCR_READ);
 	}
 
 	private String getMimetype(java.io.File file) {

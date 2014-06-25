@@ -29,7 +29,7 @@ Ext.define('ECM.view.Main', {
 			xtype : 'panel',
 			layout : 'fit',
 			height : '15%',
-			html : 'ECMS'
+			html : 'ECMS <ul><li><span id="user_name"></span></li><li><a href="auth/logout">logout</a></li></ul>'
 		}]
 	}],
 

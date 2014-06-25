@@ -44,6 +44,8 @@ Ext.define('ECM.controller.LoginController', {
 				type : 'ajax',
 				waitMsg : '正在登陆中...',
 				success : function(f, action) {
+					var r = Ext.decode(action.response.responseText);
+					Ext.getDom('user_name').innerHTML = r.user.name;
 					var lay = _this.getMainview().getLayout();
 					lay.setActiveItem(1);
 					win.hide();
@@ -75,6 +77,8 @@ Ext.define('ECM.controller.LoginController', {
 					type : 'ajax',
 					waitMsg : '正在登陆中...',
 					success : function(f, action) {
+						var r = Ext.decode(action.response.responseText);
+						Ext.getDom('user_name').innerHTML = r.user.name;
 						var lay = _this.getMainview().getLayout();
 						lay.setActiveItem(1);
 						win.hide();

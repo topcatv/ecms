@@ -10,9 +10,11 @@
 			'text' : "角色管理",
 			'leaf' : true
 		}, {
+			'id': 'funcPrivilege',
 			'text' : "功能授权",
 			'leaf' : true
 		}, {
+			'id': 'dataPrivilege',
 			'text' : "数据授权",
 			'leaf' : true
 		}
