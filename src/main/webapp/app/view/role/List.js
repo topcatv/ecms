@@ -1,8 +1,8 @@
-Ext.define('ECM.view.user.List', {
+Ext.define('ECM.view.role.List', {
 	extend : 'Ext.grid.Panel',
-	alias : 'widget.userlist',
-	title : '用户列表',
-	store : 'Users',
+	alias : 'widget.rolelist',
+	title : '角色列表',
+	store : 'Roles',
 	selModel : {
 	    selType : 'checkboxmodel',
 	    mode : 'SIMPLE'
@@ -11,23 +11,23 @@ Ext.define('ECM.view.user.List', {
 		xtype : 'toolbar',
 		dock : 'top',
 		items : [ {
-			text : '添加用户',
-			action : 'showAddUser'
+			text : '添加角色',
+			action : 'showAddRole'
 		}, {
-			text : '编辑用户',
-			action : 'showEditUser'
+			text : '编辑角色',
+			action : 'showEditRole'
 		}, {
-			text : '删除用户',
-			action : 'showDelUser'
-		}, {
+			text : '删除角色',
+			action : 'showDelRole'
+		},/* {
 			text : '解锁',
-			action : 'showUnlockUser'
+			action : 'showUnlockRole'
 		}, {
 			text : '锁定',
 			action : 'showLockUser'
-		}, {
-			text : '角色',
-			action : 'showRoles'
+		}, */{
+			text : '权限',
+			action : 'showPermissions'
 		}]
 	} ],
 	initComponent : function() {
@@ -35,7 +35,7 @@ Ext.define('ECM.view.user.List', {
 			header : 'id',
 			dataIndex : 'id'
 		}, {
-			header : '登录名',
+			header : '角色名',
 			dataIndex : 'name'
 		}, {
 			header : '描述',
@@ -45,10 +45,10 @@ Ext.define('ECM.view.user.List', {
 			dataIndex : 'createDate',
 			xtype:'datecolumn', 
 			format:'Y年m月d日'
-		}, {
+		}/*, {
 			header : '是否锁定',
 			dataIndex : 'locked'
-		} ];
+		}*/ ];
 		this.callParent(arguments);
 	}
 });

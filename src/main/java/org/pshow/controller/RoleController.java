@@ -8,6 +8,7 @@ import java.util.List;
 import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.mvc.annotation.At;
+import org.nutz.mvc.annotation.Param;
 import org.pshow.common.page.Pagination;
 import org.pshow.domain.Permission;
 import org.pshow.domain.Role;
@@ -28,14 +29,14 @@ public class RoleController {
 	private RoleService roleService;
 	
 	@At
-	public Result create(Role role) {
+	public Result create(@Param("..")Role role) {
 		roleService.insert(role);
 		return new SuccessResult();
 	}
 	
 	@At
-	public Result delete(Long roleId) {
-		roleService.delete(roleId);
+	public Result delete(String ids) {
+		roleService.delete(ids);
 		return new SuccessResult();
 	}
 	
@@ -46,8 +47,18 @@ public class RoleController {
 	}
 	
 	@At
-	public Result updatePermissionRelation(long roleId, List<Permission> addList, List<Permission> removeList) {
-		roleService.updatePermissionRelation(roleId, addList, removeList);
+	public List<Permission> getUnselectedPermissionList(Long roleId) {
+		return roleService.getUnselectedPermissionList(roleId);
+	}
+	
+	@At
+	public List<Permission> getSelectedPermissionList(Long roleId) {
+		return roleService.getSelectedPermissionList(roleId);
+	}
+	
+	@At
+	public Result updatePermission(Long roleId, String addPermissionIds, String removePermissionIds) {
+		roleService.updatePermission(roleId, addPermissionIds, removePermissionIds);
 		return new SuccessResult();
 	}
 	

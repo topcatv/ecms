@@ -26,7 +26,12 @@ import org.nutz.dao.Chain;
 import org.nutz.dao.Cnd;
 import org.nutz.dao.Dao;
 import org.nutz.dao.FieldFilter;
+<<<<<<< HEAD
 import org.nutz.ioc.loader.annotation.Inject;
+=======
+import org.nutz.dao.Sqls;
+import org.nutz.dao.sql.Sql;
+>>>>>>> f62363b5fe6c37ea97d84206947533cb6286b4c5
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.lang.Lang;
 import org.nutz.lang.Times;
@@ -84,20 +89,30 @@ public class UserService extends BaseService<User> {
 		});
 	}
 	
-	public void lock(Long userid) {
-		log.info(String.format("lock user[%s]", userid));
-		updateLock(userid, true);
+	public void lock(String ids) {
+		log.info(String.format("lock user[%s]", ids));
+		updateLock(ids, true);
 	}
 	
-	public void unlock(Long userid) {
-		log.info(String.format("unlock user[%s]", userid));
-		updateLock(userid, false);
+	public void unlock(String ids) {
+		log.info(String.format("unlock user[%s]", ids));
+		updateLock(ids, false);
 	}
 	
-	private void updateLock(Long userid, boolean isLocked) {
-		dao().update(
-				User.class,
-				Chain.make("is_locked", isLocked), Cnd.where("id", "=", userid));
+	private void updateLock(final String ids, final boolean isLocked) {
+		log.info(String.format("updateLock user[%s], isLocked[%s]", ids, isLocked));
+		Trans.exec(new Atom(){
+			@Override
+			public void run() {
+				String[] idArray = ids.split(",");
+				for (String id : idArray) {
+					Long lId = Long.valueOf(id);
+					dao().update(
+							User.class,
+							Chain.make("is_locked", isLocked), Cnd.where("id", "=", lId));
+				}
+			}
+		});
 	}
 
 	public void update(long uid, String password, boolean isLocked,
@@ -192,6 +207,52 @@ public class UserService extends BaseService<User> {
 	public User fetchByName(String name) {
 		return fetch(Cnd.where("name", "=", name));
 	}
+	
+	public List<Role> getUnselectedRoleList(Long userId) {
+		Sql sql = Sqls.queryEntity("select * from ecm_role r where not exists (select 1 from ecm_user_role eur where eur.roleid = r.id and eur.userid = @userId)");
+		sql.params().set("userId", userId);
+//		sql.setPager(dao().createPager(2,20));
+		sql.setEntity(dao().getEntity(Role.class));
+		dao().execute(sql);
+		return sql.getList(Role.class);
+	}
+
+	public List<Role> getSelectedRoleList(Long userId) {
+		User user = dao().fetchLinks(fetch(userId), "roles");
+		return user.getRoles();
+	}
+
+	public void updateRole(final Long userId, final String addRoleIds, final String removeRoleIds) {
+		log.info(String.format("updateRole userId[%s], addRoleIds[%s], removeRoleIds[%s]", userId, addRoleIds, removeRoleIds));
+		Trans.exec(new Atom(){
+			public void run(){
+				User user = fetch(userId);
+				if(StringUtils.isNotEmpty(addRoleIds)) {
+				String[] idArray = addRoleIds.split(",");
+					List<Role> roleList = new ArrayList<Role>();
+					for (String id : idArray) {
+						Long lId = Long.valueOf(id);
+						Role role = new Role();
+						role.setId(lId);
+						roleList.add(role);
+					}
+					user.setRoles(roleList);
+					dao().insertRelation(user, "roles");
+				}
+				if (StringUtils.isNotEmpty(removeRoleIds)) {
+					String[] removeIdArray = removeRoleIds.split(",");
+					log.debug("removeSize: " + removeIdArray.length);
+					dao().clear("ecm_user_role",
+							Cnd.where("userid", "=", userId).and("roleid", "in", Lang.array2array(removeIdArray, Long.class)));
+				}
+			}
+		});
+	}
+
+	public void removeRole(Long userId, Long roleId) {
+		dao().clear("system_user_role",
+				Cnd.where("userid", "=", userId).and("roleid", "=", roleId));
+	}
 
 	public List<String> getRoleNameList(User user) {
 		dao().fetchLinks(user, "roles");
@@ -201,20 +262,7 @@ public class UserService extends BaseService<User> {
 		}
 		return roleNameList;
 	}
-
-	public void addRole(Long userId, Long roleId) {
-		User user = fetch(userId);
-		Role role = new Role();
-		role.setId(roleId);
-		user.setRoles(Lang.list(role));
-		dao().insertRelation(user, "roles");
-	}
-
-	public void removeRole(Long userId, Long roleId) {
-		dao().clear("system_user_role",
-				Cnd.where("userid", "=", userId).and("roleid", "=", roleId));
-	}
-
+	
 	public Pagination getUserListByPager(Integer pageNumber, int pageSize) {
 		return getObjListByPager(dao(), getPageNumber(pageNumber), pageSize,
 				null, User.class);
@@ -252,26 +300,32 @@ public class UserService extends BaseService<User> {
 		return user;
 	}
 	
-	public void delete(final User user) {
-		log.info(String.format("delete user[%s]", user));
-		Trans.exec(new Atom(){
-			public void run(){
-				
-				dao().delete(Role.class, user.getId());
-				dao().clear("ecm_user_role", Cnd.where("userid", "=", user.getId()));
-				try {
-					Session manageSession = JackrabbitUtils.getManageSession();
-					JackrabbitSession jsession = (JackrabbitSession) manageSession;
-					UserManager userManager = jsession.getUserManager();
-					org.apache.jackrabbit.api.security.user.User juser = (org.apache.jackrabbit.api.security.user.User) userManager
-							.getAuthorizable(user.getName());
-					juser.remove();
-					manageSession.save();
-				} catch (RepositoryException re) {
-					throw Lang.wrapThrow(re);
+	public void delete(final String ids) {
+		log.info(String.format("delete user[%s]", ids));
+		if (!Lang.isEmpty(ids)) {
+			Trans.exec(new Atom(){
+				public void run(){
+					String[] idArray = ids.split(",");
+					for (String id : idArray) {
+						Long lId = Long.valueOf(id);
+						User user = dao().fetch(User.class, lId);
+						dao().delete(User.class, lId);
+						dao().clear("ecm_user_role", Cnd.where("userid", "=", lId));
+						try {
+							Session manageSession = JackrabbitUtils.getManageSession();
+							JackrabbitSession jsession = (JackrabbitSession) manageSession;
+							UserManager userManager = jsession.getUserManager();
+							org.apache.jackrabbit.api.security.user.User juser = (org.apache.jackrabbit.api.security.user.User) userManager
+									.getAuthorizable(user.getName());
+							juser.remove();
+							manageSession.save();
+						} catch (RepositoryException re) {
+							throw Lang.wrapThrow(re);
+						}
+					}
 				}
-			}
-		});
+			});
+		}
 	}
 	
 	public List<User> getUsersByIds(int[] ids){
