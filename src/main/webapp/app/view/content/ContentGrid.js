@@ -70,6 +70,21 @@ Ext.define('ECM.view.content.ContentGrid', {
                 	if(mimeType.search("powerpoint") != -1){
                 		return '<i class="fa fa-file-powerpoint-o"></i>'
                 	}
+                	if(mimeType.search("msword") != -1){
+                		return '<i class="fa fa-file-word-o"></i>'
+                	}
+                	if(mimeType.search("excel") != -1){
+                		return '<i class="fa fa-file-excel-o"></i>'
+                	}
+                	if(mimeType.search("zip") != -1){
+                		return '<i class="fa fa-file-archive-o"></i>'
+                	}
+                	if(mimeType.search("audio") != -1){
+                		return '<i class="fa fa-file-audio-o"></i>'
+                	}
+                	if(mimeType.search("video") != -1){
+                		return '<i class="fa fa-file-video-o"></i>'
+                	}
                 	if(mimeType.search("text") != -1){
                 		return '<i class="fa fa-file-text-o"></i>'
                 	}
