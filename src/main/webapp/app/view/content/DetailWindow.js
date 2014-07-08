@@ -31,6 +31,9 @@ Ext.define('ECM.view.content.DetailWindow', {
 		            '<tpl if="this.isPdf(mimeType)">',
 		            	'<p>文档: <a href="pdf/web/viewer.html?{id}" target="blank">查看详细</a></p>',
 		            '</tpl>',
+		            '<tpl if="this.isMs(mimeType)">',
+		            	'<p>文档: <a href="pdf/web/viewer.html?{id}&isCopy=true" target="blank">查看PDF副本</a></p>',
+		            '</tpl>',
 		            
 		            {
 						formatSize : function(size){
@@ -44,6 +47,9 @@ Ext.define('ECM.view.content.DetailWindow', {
 			            },
 						isPdf : function(mimeType){
 							return (mimeType.search("pdf") != -1);
+						},
+						isMs : function(mimeType){
+							return (mimeType.search("ms") != -1);
 						}
 					}
 		   ]

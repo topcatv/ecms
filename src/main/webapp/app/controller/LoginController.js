@@ -70,10 +70,10 @@ Ext.define('ECM.controller.LoginController', {
 			var form = field.up('form').getForm(), win = field.up('window');
 			if (form.isValid()) {
 				form.submit({
-					// url : 'auth/login',
-					// method : 'POST',
-					url : 'data/users.json',
-					method : 'GET',
+					url : 'auth/login',
+					method : 'POST',
+					// url : 'data/users.json',
+					// method : 'GET',
 					type : 'ajax',
 					waitMsg : '正在登陆中...',
 					success : function(f, action) {

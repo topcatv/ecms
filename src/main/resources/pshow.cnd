@@ -1,5 +1,6 @@
 [ps:file] > nt:hierarchyNode, mix:lastModified, mix:versionable
   + ps:content (nt:base) primary mandatory
+  + ps:copy (nt:base)
   - ps:size (long)
   - ps:name (string) mandatory
   - ps:mimeType (string)

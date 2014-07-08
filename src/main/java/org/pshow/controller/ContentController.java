@@ -153,13 +153,20 @@ public class ContentController {
 	@At("/stream")
 	@GET
 	@Ok("raw:stream")
-	public InputStream getStream(String id, HttpSession session,
-			HttpServletResponse response) throws ItemNotFoundException,
-			RepositoryException {
-		File f = contentService.getFile(id, session);
-		response.setContentType(f.getMimeType());
-		response.setCharacterEncoding(f.getEncoding());
-		return f.getStream();
+	public InputStream getStream(String id, boolean isCopy,
+			HttpSession session, HttpServletResponse response)
+			throws ItemNotFoundException, RepositoryException {
+		if (isCopy) {
+			InputStream stream = contentService.getCopy(id, session);
+			response.setContentType("application/pdf");
+			response.setCharacterEncoding("utf8");
+			return stream;
+		} else {
+			File f = contentService.getFile(id, session);
+			response.setContentType(f.getMimeType());
+			response.setCharacterEncoding(f.getEncoding());
+			return f.getStream();
+		}
 	}
 
 }

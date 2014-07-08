@@ -43,6 +43,8 @@ import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.value.BinaryImpl;
 import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
+import org.pshow.common.CopyCallback;
+import org.pshow.common.CopyProcesser;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.common.SimpleCharsetDetector;
 import org.pshow.controller.SearchParameter;
@@ -51,7 +53,7 @@ import org.pshow.domain.TreeItem;
 
 @IocBean
 public class ContentService {
-	
+
 	private static final MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
 	@Inject
 	private PermissionService permissionService;
@@ -68,7 +70,8 @@ public class ContentService {
 		Node addNode = parentNode.addNode(name, "ps:folder");
 		addNode.setProperty("ps:name", name);
 		jcrSession.save();
-		permissionService.authorize(addNode.getIdentifier(), jcrSession.getUserID(), true, Privilege.JCR_ALL);
+		permissionService.authorize(addNode.getIdentifier(),
+				jcrSession.getUserID(), true, Privilege.JCR_ALL);
 	}
 
 	private Node getNode(String identifier, Session jcrSession)
@@ -159,8 +162,8 @@ public class ContentService {
 		System.out.println(file.getName());
 		System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 
-		Session jcrSession = getJcrSession(session);
-		VersionManager versionManager = jcrSession.getWorkspace()
+		final Session jcrSession = getJcrSession(session);
+		final VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
 		Node pNode = getNode(parent, jcrSession);
 		Node fileNode = pNode.addNode(fileName, "ps:file");
@@ -176,8 +179,38 @@ public class ContentService {
 
 		jcrSession.save();
 		versionManager.checkpoint(fileNode.getPath());
-		permissionService.authorize(fileNode.getIdentifier(), jcrSession.getUserID(), true, Privilege.JCR_ALL);
-		permissionService.authorize(fileNode.getIdentifier(), "everyone", false, Privilege.JCR_READ);
+		if (mimeType.indexOf("ms") != -1) {
+			CopyCallback callback = new CopyCallback() {
+
+				@Override
+				public void execute(String cid, String output) {
+					try {
+						Node fileNode = jcrSession.getNodeByIdentifier(cid);
+						Node resNode = fileNode.addNode("ps:copy",
+								NodeType.NT_RESOURCE);
+						fillResourceNode(new java.io.File(output), null,
+								"application/pdf", resNode);
+						jcrSession.save();
+						versionManager.checkpoint(fileNode.getPath());
+					} catch (ItemNotFoundException e) {
+						e.printStackTrace();
+					} catch (RepositoryException e) {
+						e.printStackTrace();
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+
+				}
+			};
+			new Thread(new CopyProcesser(callback, file,
+					fileNode.getIdentifier())).start();
+		}
+		permissionService.authorize(fileNode.getIdentifier(),
+				jcrSession.getUserID(), true, Privilege.JCR_ALL);
+		permissionService.authorize(fileNode.getIdentifier(), "everyone",
+				false, Privilege.JCR_READ);
 	}
 
 	private String getMimetype(java.io.File file) {
@@ -236,9 +269,9 @@ public class ContentService {
 	public void updateFile(String id, String fileName, java.io.File file,
 			HttpSession session) throws ItemNotFoundException,
 			RepositoryException, FileNotFoundException, IOException {
-		Session jcrSession = getJcrSession(session);
+		final Session jcrSession = getJcrSession(session);
 		Node fileNode = getNode(id, jcrSession);
-		VersionManager versionManager = jcrSession.getWorkspace()
+		final VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
 		if (!fileNode.isNodeType(NodeType.MIX_VERSIONABLE)) {
 			fileNode.addMixin(NodeType.MIX_VERSIONABLE);
@@ -252,8 +285,9 @@ public class ContentService {
 			jcrSession.move(fileNode.getPath(),
 					destAbsPath.replaceAll("//", "/"));
 		}
+		String mimeType = "";
 		if (file != null && file.exists()) {
-			String mimeType = getMimetype(file);
+			mimeType = getMimetype(file);
 
 			fillMainNode(fileName, file, fileNode, mimeType);
 
@@ -262,6 +296,39 @@ public class ContentService {
 		}
 		jcrSession.save();
 		versionManager.checkin(fileNode.getPath());
+		if (file != null && file.exists() && mimeType.indexOf("ms") != -1) {
+			CopyCallback callback = new CopyCallback() {
+
+				@Override
+				public void execute(String cid, String output) {
+					try {
+						Node fileNode = jcrSession.getNodeByIdentifier(cid);
+						Node resNode = null;
+						if (fileNode.hasNode("ps:copy")) {
+							resNode = fileNode.getNode("ps:copy");
+						} else {
+							resNode = fileNode.addNode("ps:copy");
+						}
+						versionManager.checkout(fileNode.getPath());
+						fillResourceNode(new java.io.File(output), null,
+								"application/pdf", resNode);
+						jcrSession.save();
+						versionManager.checkin(fileNode.getPath());
+					} catch (ItemNotFoundException e) {
+						e.printStackTrace();
+					} catch (RepositoryException e) {
+						e.printStackTrace();
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+
+				}
+			};
+			new Thread(new CopyProcesser(callback, file,
+					fileNode.getIdentifier())).start();
+		}
 	}
 
 	private void fillResourceNode(java.io.File file, Node fileNode,
@@ -272,10 +339,14 @@ public class ContentService {
 		if (mimeType.contains("text")) {
 			SimpleCharsetDetector simpleCharsetDetector = new SimpleCharsetDetector();
 			String charset = simpleCharsetDetector.guessFileEncoding(file);
-			fileNode.setProperty("ps:encoding", charset);
+			if (fileNode != null) {
+				fileNode.setProperty("ps:encoding", charset);
+			}
 			resNode.setProperty(JcrConstants.JCR_ENCODING, charset);
 		} else {
-			fileNode.setProperty("ps:encoding", "UTF-8");
+			if (fileNode != null) {
+				fileNode.setProperty("ps:encoding", "UTF-8");
+			}
 			resNode.setProperty(JcrConstants.JCR_ENCODING, "UTF-8");
 		}
 		resNode.setProperty(JcrConstants.JCR_DATA, new BinaryImpl(
@@ -376,37 +447,56 @@ public class ContentService {
 		DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 		StringBuffer sb = new StringBuffer("SELECT t.* FROM [");
 		sb.append(search.isFolder() ? "ps:folder" : NodeType.NT_HIERARCHY_NODE)
-		.append("] as t WHERE");
-		if(StringUtils.isNoneBlank(search.getName())){
-			sb.append(" and t.[ps:name] like '%").append(search.getName()).append("%'");
+				.append("] as t WHERE");
+		if (StringUtils.isNoneBlank(search.getName())) {
+			sb.append(" and t.[ps:name] like '%").append(search.getName())
+					.append("%'");
 		}
-		if(StringUtils.isNoneBlank(search.getCreator())){
-			sb.append(" and t.[jcr:createdBy] like '%").append(search.getCreator()).append("%'");
+		if (StringUtils.isNoneBlank(search.getCreator())) {
+			sb.append(" and t.[jcr:createdBy] like '%")
+					.append(search.getCreator()).append("%'");
 		}
-		if(StringUtils.isNoneBlank(search.getLastModifiedBy())){
-			sb.append(" and t.[jcr:lastModifiedBy] like '%").append(search.getLastModifiedBy()).append("%'");
+		if (StringUtils.isNoneBlank(search.getLastModifiedBy())) {
+			sb.append(" and t.[jcr:lastModifiedBy] like '%")
+					.append(search.getLastModifiedBy()).append("%'");
 		}
-		if(null != search.getCreated_start()){
-			sb.append(" and t.[jcr:created] >= cast('").append(format.format(search.getCreated_start())).append("' as date)");
+		if (null != search.getCreated_start()) {
+			sb.append(" and t.[jcr:created] >= cast('")
+					.append(format.format(search.getCreated_start()))
+					.append("' as date)");
 		}
-		if(null != search.getCreated_end()){
-			sb.append(" and t.[jcr:created] <= cast('").append(format.format(search.getCreated_end())).append("' as date)");
+		if (null != search.getCreated_end()) {
+			sb.append(" and t.[jcr:created] <= cast('")
+					.append(format.format(search.getCreated_end()))
+					.append("' as date)");
 		}
-		if(null != search.getLastModified_start()){
-			sb.append(" and t.[jcr:lastModified] >= cast('").append(format.format(search.getLastModified_start())).append("' as date)");
+		if (null != search.getLastModified_start()) {
+			sb.append(" and t.[jcr:lastModified] >= cast('")
+					.append(format.format(search.getLastModified_start()))
+					.append("' as date)");
 		}
-		if(null != search.getLastModified_end()){
-			sb.append(" and t.[jcr:lastModified] <= cast('").append(format.format(search.getLastModified_end())).append("' as date)");
+		if (null != search.getLastModified_end()) {
+			sb.append(" and t.[jcr:lastModified] <= cast('")
+					.append(format.format(search.getLastModified_end()))
+					.append("' as date)");
 		}
-		
+
 		String sql = sb.toString();
-		if(sql.endsWith("WHERE")){
+		if (sql.endsWith("WHERE")) {
 			sql = sql.replace("WHERE", "");
 		}
-		if(sql.contains("WHERE and")){
+		if (sql.contains("WHERE and")) {
 			sql = sql.replace("WHERE and", "WHERE");
 		}
 		return sql;
+	}
+
+	public InputStream getCopy(String id, HttpSession session)
+			throws ItemNotFoundException, RepositoryException {
+		Node node = getNode(id, getJcrSession(session));
+		Node resNode = node.getNode("ps:copy");
+		return resNode.getProperty(JcrConstants.JCR_DATA).getBinary()
+				.getStream();
 	}
 
 }

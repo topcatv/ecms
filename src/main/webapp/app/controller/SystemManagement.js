@@ -1,19 +1,13 @@
 Ext.define('ECM.controller.SystemManagement', {
 	extend : 'Ext.app.Controller',
-<<<<<<< HEAD
-	stores : [ 'SystemManagement', 'Users', 'ContentTreeForPermission', 'ContentForPermission', 'UsersForPermission' ],
-	views : [ 'SystemManagement', 'user.List', 'privilege.Authorize', 'privilege.Tree', 'privilege.ContentGrid', 'privilege.AuthorizeWindow' ],
-=======
-	stores : [ 'SystemManagement', 'Users', 'Roles' ],
-	views : [ 'SystemManagement', 'user.List', 'role.List' ],
->>>>>>> f62363b5fe6c37ea97d84206947533cb6286b4c5
+	stores : [ 'SystemManagement', 'Users', 'Roles', 'ContentTreeForPermission', 'ContentForPermission', 'UsersForPermission' ],
+	views : [ 'SystemManagement', 'user.List', 'role.List', 'privilege.Authorize', 'privilege.Tree', 'privilege.ContentGrid', 'privilege.AuthorizeWindow' ],
 	refs : [ {
 		ref : 'systemManagement',
 		selector : 'systemManagement'
 	}, {
 		ref : 'userList',
 		selector : 'userlist'
-<<<<<<< HEAD
 	}, {
 		ref : 'authorize',
 		selector : 'authorize'
@@ -26,20 +20,15 @@ Ext.define('ECM.controller.SystemManagement', {
 	},{
 		ref: 'contentGrid',
 		selector: 'content_grid_for_permission'
+	}, {
+		ref : 'roleList',
+		selector : 'rolelist'
 	}],
 	init : function() {
 		Ext.create('ECM.view.user.List', {});
 		Ext.create('ECM.view.privilege.Authorize', {});
 		Ext.create('ECM.view.privilege.AuthorizeWindow', {});
-=======
-	} , {
-		ref : 'roleList',
-		selector : 'rolelist'
-	} ],
-	init : function() {
-		Ext.create('ECM.view.user.List', {});
 		Ext.create('ECM.view.role.List', {});
->>>>>>> f62363b5fe6c37ea97d84206947533cb6286b4c5
 		this.control({
 			'systemManagement' : {
 				itemclick : this.itemclick,

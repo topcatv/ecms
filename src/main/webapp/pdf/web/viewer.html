@@ -43,7 +43,8 @@ http://sourceforge.net/adobe/cmap/wiki/License/
 <script src="../build/pdf.js"></script>
 
 <script type="text/javascript">
-	var DEFAULT_URL = "/content/stream?id="+location.search.substring(1);
+	var searchParam = location.search.substring(1);
+	var DEFAULT_URL = "/content/stream?id="+searchParam;
 </script>
 
 <script src="debugger.js"></script>

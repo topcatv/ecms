@@ -121,24 +121,24 @@ public class JCRManageControllerTest extends BaseTest {
 //					}
 //				}
 //			}
-			Node node = manageSession.getNodeByIdentifier("01a95b0d-1d6d-403b-8030-95d62c9bcc0d");
-			String path = node.getPath();
-			System.out.println(path);
-			AccessControlPolicy[] policies = acm.getPolicies(path);
-			AccessControlPolicyIterator applicablePolicies = acm.getApplicablePolicies(path);
+//			Node node = manageSession.getNodeByIdentifier("01a95b0d-1d6d-403b-8030-95d62c9bcc0d");
+//			String path = node.getPath();
+//			System.out.println(path);
+			AccessControlPolicy[] policies = acm.getPolicies("/");
+//			AccessControlPolicyIterator applicablePolicies = acm.getApplicablePolicies(path);
 			AccessControlPolicy acp = policies[0];
 			JackrabbitAccessControlList jacl = (JackrabbitAccessControlList) acp;
-//			PrincipalManager pMgr = ((JackrabbitSession) manageSession)
-//					.getPrincipalManager();
-//			Principal principal = pMgr.getPrincipal("roy");
-//			Privilege privilege = acm.privilegeFromName(Privilege.JCR_ADD_CHILD_NODES);
-//			Privilege privilege2 = acm.privilegeFromName(Privilege.JCR_NODE_TYPE_MANAGEMENT);
-//			Privilege privilege3 = acm.privilegeFromName(Privilege.JCR_MODIFY_PROPERTIES);
-//			Privilege privilege4 = acm.privilegeFromName(Privilege.JCR_VERSION_MANAGEMENT);
-//			Privilege privilege5 = acm.privilegeFromName(Privilege.JCR_REMOVE_CHILD_NODES);
-//			jacl.addEntry(principal, new Privilege[]{privilege,privilege2,privilege3,privilege4,privilege5}, true);
-//			acm.setPolicy("/", jacl);
-//			manageSession.save();
+			PrincipalManager pMgr = ((JackrabbitSession) manageSession)
+					.getPrincipalManager();
+			Principal principal = pMgr.getPrincipal("roy");
+			Privilege privilege = acm.privilegeFromName(Privilege.JCR_ALL);
+			Privilege privilege2 = acm.privilegeFromName(Privilege.JCR_NODE_TYPE_MANAGEMENT);
+			Privilege privilege3 = acm.privilegeFromName(Privilege.JCR_MODIFY_PROPERTIES);
+			Privilege privilege4 = acm.privilegeFromName(Privilege.JCR_VERSION_MANAGEMENT);
+			Privilege privilege5 = acm.privilegeFromName(Privilege.JCR_REMOVE_CHILD_NODES);
+			jacl.addEntry(principal, new Privilege[]{privilege}, true);
+			acm.setPolicy("/", jacl);
+			manageSession.save();
 			AccessControlEntry[] aces = jacl.getAccessControlEntries();
 			for (AccessControlEntry ace : aces) {
 				JackrabbitAccessControlEntry jace = (JackrabbitAccessControlEntry) ace;
