@@ -26,12 +26,9 @@ import org.nutz.dao.Chain;
 import org.nutz.dao.Cnd;
 import org.nutz.dao.Dao;
 import org.nutz.dao.FieldFilter;
-<<<<<<< HEAD
-import org.nutz.ioc.loader.annotation.Inject;
-=======
 import org.nutz.dao.Sqls;
 import org.nutz.dao.sql.Sql;
->>>>>>> f62363b5fe6c37ea97d84206947533cb6286b4c5
+import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.ioc.loader.annotation.IocBean;
 import org.nutz.lang.Lang;
 import org.nutz.lang.Times;
@@ -166,7 +163,7 @@ public class UserService extends BaseService<User> {
 				dao().insert(user);
 				manageSession.save();
 				//给新建的用户Root的添加子的权限
-				permissionService.authorize(manageSession.getRootNode().getIdentifier(), user.getName(), true, Privilege.JCR_ADD_CHILD_NODES);
+				permissionService.authorize(manageSession.getRootNode().getIdentifier(), user.getName(), true, Privilege.JCR_ALL);
 				} catch (RepositoryException re) {
 					throw Lang.wrapThrow(re);
 				}
