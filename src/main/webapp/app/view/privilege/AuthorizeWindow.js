@@ -29,7 +29,7 @@ Ext.define('ECM.view.privilege.AuthorizeWindow', {
 	    			header : '创建日期',
 	    			dataIndex : 'createDate',
 	    			xtype:'datecolumn', 
-	    			format:'Y年m月d日'
+	    			format:'Y-m-d H:i'
 	    		}],
 		        columnWidth: 0.7
 		    }, {

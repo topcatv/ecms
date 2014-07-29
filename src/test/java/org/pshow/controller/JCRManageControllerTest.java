@@ -10,7 +10,6 @@ import java.util.List;
 
 import javax.jcr.LoginException;
 import javax.jcr.NamespaceException;
-import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -24,18 +23,15 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicy;
-import javax.jcr.security.AccessControlPolicyIterator;
 import javax.jcr.security.Privilege;
 
 import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.api.security.JackrabbitAccessControlEntry;
 import org.apache.jackrabbit.api.security.JackrabbitAccessControlList;
 import org.apache.jackrabbit.api.security.principal.PrincipalManager;
-import org.apache.jackrabbit.core.security.authorization.AbstractACLTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.nutz.mvc.Mvcs;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.domain.Namespace;
 import org.pshow.domain.PropertyDef;
@@ -49,7 +45,7 @@ public class JCRManageControllerTest extends BaseTest {
 
 	@Before
 	public void setUp() throws Exception {
-		jcrManageController = Mvcs.getIoc().get(JCRManageController.class);
+//		jcrManageController = this.getBean(JCRManageController.class);
 		nodeTypeName = "app:test";
 		properties = new ArrayList<PropertyDef>();
 		pd = new PropertyDef();
@@ -124,21 +120,21 @@ public class JCRManageControllerTest extends BaseTest {
 //			Node node = manageSession.getNodeByIdentifier("01a95b0d-1d6d-403b-8030-95d62c9bcc0d");
 //			String path = node.getPath();
 //			System.out.println(path);
-			AccessControlPolicy[] policies = acm.getPolicies("/");
+			AccessControlPolicy[] policies = acm.getPolicies("/git");
 //			AccessControlPolicyIterator applicablePolicies = acm.getApplicablePolicies(path);
 			AccessControlPolicy acp = policies[0];
 			JackrabbitAccessControlList jacl = (JackrabbitAccessControlList) acp;
-			PrincipalManager pMgr = ((JackrabbitSession) manageSession)
-					.getPrincipalManager();
-			Principal principal = pMgr.getPrincipal("roy");
-			Privilege privilege = acm.privilegeFromName(Privilege.JCR_ALL);
-			Privilege privilege2 = acm.privilegeFromName(Privilege.JCR_NODE_TYPE_MANAGEMENT);
-			Privilege privilege3 = acm.privilegeFromName(Privilege.JCR_MODIFY_PROPERTIES);
-			Privilege privilege4 = acm.privilegeFromName(Privilege.JCR_VERSION_MANAGEMENT);
-			Privilege privilege5 = acm.privilegeFromName(Privilege.JCR_REMOVE_CHILD_NODES);
-			jacl.addEntry(principal, new Privilege[]{privilege}, true);
-			acm.setPolicy("/", jacl);
-			manageSession.save();
+//			PrincipalManager pMgr = ((JackrabbitSession) manageSession)
+//					.getPrincipalManager();
+//			Principal principal = pMgr.getPrincipal("roy");
+//			Privilege privilege = acm.privilegeFromName(Privilege.JCR_ALL);
+//			Privilege privilege2 = acm.privilegeFromName(Privilege.JCR_NODE_TYPE_MANAGEMENT);
+//			Privilege privilege3 = acm.privilegeFromName(Privilege.JCR_MODIFY_PROPERTIES);
+//			Privilege privilege4 = acm.privilegeFromName(Privilege.JCR_VERSION_MANAGEMENT);
+//			Privilege privilege5 = acm.privilegeFromName(Privilege.JCR_REMOVE_CHILD_NODES);
+//			jacl.addEntry(principal, new Privilege[]{privilege}, true);
+//			acm.setPolicy("/", jacl);
+//			manageSession.save();
 			AccessControlEntry[] aces = jacl.getAccessControlEntries();
 			for (AccessControlEntry ace : aces) {
 				JackrabbitAccessControlEntry jace = (JackrabbitAccessControlEntry) ace;

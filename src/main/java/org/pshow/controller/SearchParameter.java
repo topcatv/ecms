@@ -3,15 +3,20 @@ package org.pshow.controller;
 import java.util.Date;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.format.annotation.DateTimeFormat;
 
 public class SearchParameter {
 	private String name;
 	private boolean isFolder;
 	private String creator;
 	private String lastModifiedBy;
+	@DateTimeFormat(pattern="yyyy-MM-dd")
 	private Date created_start;
+	@DateTimeFormat(pattern="yyyy-MM-dd")
 	private Date created_end;
+	@DateTimeFormat(pattern="yyyy-MM-dd")
 	private Date lastModified_start;
+	@DateTimeFormat(pattern="yyyy-MM-dd")
 	private Date lastModified_end;
 
 	public SearchParameter() {

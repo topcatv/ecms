@@ -7,6 +7,7 @@ import javax.servlet.http.HttpSessionListener;
 
 import org.apache.log4j.Logger;
 import org.apache.shiro.subject.Subject;
+import org.pshow.domain.User;
 import org.pshow.service.UserService;
 
 /**
@@ -29,14 +30,10 @@ public class LogoutListener implements HttpSessionListener {
     public void sessionDestroyed(HttpSessionEvent se) {
     	HttpSession session = se.getSession();
     	Subject currentUser = (Subject) session.getAttribute(UserService.SUBJECT);
-    	Object username = currentUser.getPrincipal();
+    	User user = (User) currentUser.getPrincipal();
 		if (currentUser.isAuthenticated()) {
-			Session jcrSession = JackrabbitUtils.getJcrSessionFromHttpSession(session);
-			if (jcrSession != null) {
-				jcrSession.logout();
-			}
 			currentUser.logout();
-			log.debug(String.format("user %s logout", username));
+			log.debug(String.format("user %s logout", user.getName()));
 		}
     }
 

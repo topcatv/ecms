@@ -61,9 +61,9 @@ Ext.define('ECM.controller.Users', {
 		var _this = this;
 		if (form.isValid()) {
 			form.submit({
-				url : 'user/create',
+				url : 'user',
 				method : 'POST',
-				type : 'ajax',
+//				type : 'ajax',
 				waitMsg : '处理中...',
 				success : function(f, action) {
 					win.hide();
@@ -72,13 +72,19 @@ Ext.define('ECM.controller.Users', {
 				},
 				failure : function(f, action) {
 					var result = Ext.decode(action.response.responseText);
-					Ext.Msg.show({
-						title : '提示信息',
-						msg : result.data,
-						minWidth : 200,
-						modal : true,
-						buttons : Ext.Msg.OK
-					});
+					if(result.user){
+						win.hide();
+						f.reset();
+						_this.getUsersStore().load();
+					}else{
+						Ext.Msg.show({
+							title : '提示信息',
+							msg : result.data,
+							minWidth : 200,
+							modal : true,
+							buttons : Ext.Msg.OK
+						});
+					}
 				}
 			});
 		}
@@ -226,16 +232,30 @@ Ext.define('ECM.controller.Users', {
 		console.debug('grid double click');
 		var view = Ext.widget('useredit');
 		view.down('form').loadRecord(record);
+		view.show();
 	},
 	updateUser : function(button) {
-		var win = button.up('window'),
-		form = win.down('form'),
-		record = form.getRecord(),
-		values = form.getValues();
-
-		record.set(values);
-		win.hide();
-		this.getUsersStore().sync();
+		var win = button.up('window'), form = win.down('form');
+		var _this = this;
+		form.submit({
+			url : 'user',
+			method : 'PUT',
+			type : 'ajax',
+			waitMsg : '正在更新...',
+			success : function(f, action) {
+				win.hide();
+				_this.getUsersStore().reload();
+			},
+			failure : function(f, action) {
+				var result = Ext.decode(action.response.responseText);
+				if(result.user){
+					win.hide();
+					_this.getUsersStore().load();
+				}else{
+					Ext.Msg.alert("提示信息",result.data);
+				}
+			}
+		});
 	},
 	_getGridSelectedIds : function(){
 		var seleted = this.getUserList().getSelectionModel().getSelection();

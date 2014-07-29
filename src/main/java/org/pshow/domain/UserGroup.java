@@ -6,19 +6,20 @@ package org.pshow.domain;
 import java.io.Serializable;
 import java.util.List;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.nutz.dao.entity.annotation.ColDefine;
-import org.nutz.dao.entity.annotation.ColType;
-import org.nutz.dao.entity.annotation.Column;
-import org.nutz.dao.entity.annotation.Id;
-import org.nutz.dao.entity.annotation.ManyMany;
-import org.nutz.dao.entity.annotation.Table;
 
 /**
  * @author Sin
  *
  */
-@Table("ecm_group")
+@Entity
+@Table(name="ecm_group")
 public class UserGroup implements Serializable {
 
 	/**
@@ -30,17 +31,15 @@ public class UserGroup implements Serializable {
 	private Long id;
 	
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 200)
 	private String name;
 	
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 500)
 	private String description;
 	
-	@ManyMany(target = User.class, relation = "ecm_user_group", from = "groupid", to = "userid")
+	@ManyToMany(mappedBy="groups")//(target = User.class, relation = "ecm_user_group", from = "groupid", to = "userid")
 	private List<User> users;
 	
-	@ManyMany(target = User.class, relation = "ecm_group_role", from = "groupid", to = "roleid")
+	@ManyToMany(mappedBy="groups")//(target = User.class, relation = "ecm_group_role", from = "groupid", to = "roleid")
 	private List<Role> roles;
 
 	public Long getId() {

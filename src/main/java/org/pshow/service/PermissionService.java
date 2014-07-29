@@ -24,30 +24,35 @@ import javax.jcr.version.VersionException;
 import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.api.security.JackrabbitAccessControlList;
 import org.apache.jackrabbit.api.security.principal.PrincipalManager;
-import org.nutz.dao.Dao;
-import org.nutz.ioc.loader.annotation.Inject;
-import org.nutz.ioc.loader.annotation.IocBean;
 import org.pshow.common.JackrabbitUtils;
-import org.pshow.common.page.Pagination;
 import org.pshow.domain.Permission;
 import org.pshow.domain.User;
+import org.pshow.repository.PermissionDao;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author Sin
  *
  */
-@IocBean(args = { "refer:dao" })
-public class PermissionService extends BaseService<Permission> {
-	@Inject
+@Service
+@Transactional
+public class PermissionService {
+	
 	private UserService userService;
+	
+	private PermissionDao permissionDao;
 
-	public PermissionService(Dao dao) {
-		super(dao);
+	@Autowired
+	public void setPermissionDao(PermissionDao permissionDao) {
+		this.permissionDao = permissionDao;
 	}
 
-	public Pagination getListByPager(Integer pageNumber, int pageSize) {
-		return getObjListByPager(dao(), getPageNumber(pageNumber), pageSize,
-				null, Permission.class);
+	public Page<Permission> getListByPager(Integer pageNumber, int pageSize) {
+		return permissionDao.findAll(new PageRequest(pageNumber, pageSize));
 	}
 
 	public void authorize(String cid, String userName, boolean isAllow,
@@ -139,5 +144,10 @@ public class PermissionService extends BaseService<Permission> {
 					Privilege.JCR_REMOVE_NODE, Privilege.JCR_VERSION_MANAGEMENT };
 		}
 		return null;
+	}
+
+	@Autowired
+	public void setUserService(UserService userService) {
+		this.userService = userService;
 	}
 }

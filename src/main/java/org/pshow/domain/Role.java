@@ -3,32 +3,36 @@ package org.pshow.domain;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.nutz.dao.entity.annotation.ColDefine;
-import org.nutz.dao.entity.annotation.ColType;
-import org.nutz.dao.entity.annotation.Column;
-import org.nutz.dao.entity.annotation.Id;
-import org.nutz.dao.entity.annotation.Index;
-import org.nutz.dao.entity.annotation.ManyMany;
-import org.nutz.dao.entity.annotation.Table;
-import org.nutz.dao.entity.annotation.TableIndexes;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
 
-@Table("ecm_role")
-@TableIndexes({ @Index(name = "idx_role_name", fields = { "name" }, unique = true) })
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+@Entity
+@Table(name="ecm_role")
 public class Role implements Serializable{
 	private static final long serialVersionUID = 7928270441533321123L;
 	@Id
 	private Long id;
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 200)
 	private String name;
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 500)
 	private String description;
-	@ManyMany(target = User.class, relation = "ecm_user_role", from = "roleid", to = "userid")
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(name = "ecm_user_role", joinColumns = { @JoinColumn(name = "roleid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "userid", referencedColumnName = "id") })
 	private List<User> users;
-	@ManyMany(target = Permission.class, relation = "ecm_role_permission", from = "roleid", to = "permissionid")
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(name = "ecm_role_permission", joinColumns = { @JoinColumn(name = "roleid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "permissionid", referencedColumnName = "id") })
 	private List<Permission> permissions;
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(name = "ecm_group_role", joinColumns = { @JoinColumn(name = "roleid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "groupid", referencedColumnName = "id") })
+	private List<UserGroup> groups;
 
 	public Long getId() {
 		return id;
@@ -98,5 +102,13 @@ public class Role implements Serializable{
 	@Override
 	public String toString() {
 		return ToStringBuilder.reflectionToString(this);
+	}
+
+	public List<UserGroup> getGroups() {
+		return groups;
+	}
+
+	public void setGroups(List<UserGroup> groups) {
+		this.groups = groups;
 	}
 }

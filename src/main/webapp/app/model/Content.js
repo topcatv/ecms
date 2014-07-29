@@ -7,7 +7,7 @@ Ext.define('ECM.model.Content', {
 		name : 'name',
 		type : 'string'
 	}, {
-		name : 'isFolder',
+		name : 'folder',
 		type : 'boolean'
 	}, {
 		name : 'size',
@@ -17,7 +17,8 @@ Ext.define('ECM.model.Content', {
 		type : 'string'
 	}, {
 		name : 'created',
-		type : 'date'
+		type : 'date',
+		dateFormat : 'Y-m-d H:i:s'
 	}, {
 		name : 'creator',
 		type : 'string'
@@ -26,6 +27,7 @@ Ext.define('ECM.model.Content', {
 		type : 'string'
 	}, {
 		name : 'lastModified',
-		type : 'date'
+		type : 'date',
+		dateFormat : 'Y-m-d H:i:s'
 	} ]
 });

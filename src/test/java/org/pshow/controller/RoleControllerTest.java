@@ -1,6 +1,8 @@
 package org.pshow.controller;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,11 +10,10 @@ import java.util.List;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.junit.Before;
 import org.junit.Test;
-import org.nutz.mvc.Mvcs;
-import org.pshow.common.page.Pagination;
 import org.pshow.domain.Permission;
 import org.pshow.domain.Role;
 import org.pshow.domain.User;
+import org.springframework.data.domain.Page;
 
 public class RoleControllerTest extends BaseTest {
 	private RoleController roleController;
@@ -21,12 +22,12 @@ public class RoleControllerTest extends BaseTest {
 
 	@Before
 	public void setUp() throws Exception {
-		roleController = Mvcs.getIoc().get(RoleController.class);
+		roleController = getBean(RoleController.class);
 		
-		Pagination pagination = roleController.list(null, "testRole", null, 0);
-		assertNotNull("no result return", pagination);
-		assertEquals(1, pagination.getTotalCount());
-		roleId = ((Role)pagination.getList().get(0)).getId();
+		Page<Role> page = roleController.list(1, 1);
+		assertNotNull("no result return", page);
+		assertEquals(1, page.getTotalElements());
+		roleId = page.getContent().get(0).getId();
 	}
 
 	@Test
@@ -36,10 +37,10 @@ public class RoleControllerTest extends BaseTest {
 		role.setDescription("测试的Role");
 		roleController.create(role);
 		
-		Pagination pagination = roleController.list(null, "testRole", null, 0);
+		Page<Role> pagination = roleController.list(1, 1);
 		assertNotNull("no result return", pagination);
-		assertEquals(1, pagination.getTotalCount());
-		roleId = ((Role)pagination.getList().get(0)).getId();
+		assertEquals(1, pagination.getTotalElements());
+		roleId = pagination.getContent().get(0).getId();
 	}
 
 	@Test
@@ -51,27 +52,27 @@ public class RoleControllerTest extends BaseTest {
 	public void testDelete() {
 //		roleController.delete(roleId);
 		
-		Pagination pagination = roleController.list(roleId, null, null, 0);
+		Page<Role> pagination = roleController.list(1,1);
 		assertNotNull("no result return", pagination);
-		assertEquals(0, pagination.getTotalCount());
+		assertEquals(0, pagination.getTotalElements());
 	}
 
 	@Test
 	public void testList() {
-		Pagination pagination = roleController.list(null, null, null, 0);
+		Page<Role> pagination = roleController.list(1,1);
 		assertNotNull("no result return", pagination);
 		
-		pagination = roleController.list(roleId, null, null, 0);
+		pagination = roleController.list(1,1);
 		assertNotNull("no result return", pagination);
-		assertEquals(1, pagination.getTotalCount());
+		assertEquals(1, pagination.getTotalElements());
 		
-		pagination = roleController.list(Long.valueOf(0), null, null, 0);
+		pagination = roleController.list(1,1);
 		assertNotNull("no result return", pagination);
-		assertEquals(0, pagination.getTotalCount());
+		assertEquals(0, pagination.getTotalElements());
 		
-		pagination = roleController.list(null, "user", null, 0);
+		pagination = roleController.list(1,1);
 		assertNotNull("no result return", pagination);
-		assertEquals(2, pagination.getTotalCount());
+		assertEquals(2, pagination.getTotalElements());
 	}
 	
 	@Test
@@ -100,14 +101,14 @@ public class RoleControllerTest extends BaseTest {
 		removeList.add(permission);
 		
 // 		roleController.updatePermissionRelation(roleId, addList, removeList);
- 		Pagination pagination = roleController.listPermissionByPage(roleId, null, null, 0);
- 		assertEquals(2, pagination.getTotalCount());
+ 		Page<Permission> pagination = roleController.listPermissionByPage(roleId, null, null, 0);
+ 		assertEquals(2, pagination.getTotalElements());
 	}
 	
 	@Test
 	public void testListPermissionByPage() {
-		Pagination pagination = roleController.listPermissionByPage(roleId, null, null, 0);
- 		assertEquals(2, pagination.getTotalCount());
+		Page<Permission> pagination = roleController.listPermissionByPage(roleId, null, null, 0);
+ 		assertEquals(2, pagination.getTotalElements());
 	}
 	
 	@Test
@@ -136,8 +137,8 @@ public class RoleControllerTest extends BaseTest {
 	
 	@Test
 	public void testListUserByPage() {
-		Pagination pagination = roleController.listUserByPage(roleId, null, null, 0);
- 		assertEquals(2, pagination.getTotalCount());
+		Page<User> pagination = roleController.listUserByPage(roleId, null, null, 0);
+ 		assertEquals(2, pagination.getTotalElements());
 	}
 
 }

@@ -28,15 +28,7 @@ Ext.define('ECM.view.user.Create', {
 				name : 'description',
 				fieldLabel : '描述',
 				xtype : 'textfield'
-			}, {
-				name : 'createDate',
-				fieldLabel : '创建日期',
-				xtype : 'textfield'
-			}, {
-				name : 'locked',
-				fieldLabel : '是否锁定',
-				xtype : 'textfield'
-			} ]
+			}]
 		} ];
 
 		this.buttons = [ {

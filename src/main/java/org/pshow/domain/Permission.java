@@ -3,32 +3,27 @@ package org.pshow.domain;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.nutz.dao.entity.annotation.ColDefine;
-import org.nutz.dao.entity.annotation.ColType;
-import org.nutz.dao.entity.annotation.Column;
-import org.nutz.dao.entity.annotation.Id;
-import org.nutz.dao.entity.annotation.Index;
-import org.nutz.dao.entity.annotation.ManyMany;
-import org.nutz.dao.entity.annotation.Table;
-import org.nutz.dao.entity.annotation.TableIndexes;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
 
-@Table("ecm_permission")
-@TableIndexes({ @Index(name = "idx_permission_name_id", fields = { "name" }, unique = true) })
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+@Entity
+@Table(name="ecm_permission")
 public class Permission implements Serializable{
 	private static final long serialVersionUID = -8140799124476746216L;
 	@Id
 	private Long id;
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 200)
 	private String name;
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 500)
 	private String description;
-	@ManyMany(target = Role.class, relation = "ecm_role_permission", from = "permissionid", to = "roleid")
+	@ManyToMany(mappedBy="permissions")
 	private List<Role> roles;
-	@Column("is_locked")
-	@ColDefine(type = ColType.BOOLEAN)
+	@Column(name="is_locked")
 	private boolean locked;
 	
 	public boolean isLocked() {

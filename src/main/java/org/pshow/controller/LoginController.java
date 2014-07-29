@@ -1,36 +1,42 @@
 package org.pshow.controller;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.jcr.LoginException;
 import javax.jcr.RepositoryException;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.nutz.ioc.loader.annotation.Inject;
-import org.nutz.ioc.loader.annotation.IocBean;
-import org.nutz.mvc.annotation.At;
-import org.nutz.mvc.annotation.Ok;
-import org.nutz.mvc.annotation.Param;
 import org.pshow.domain.User;
-import org.pshow.mvc.Result;
-import org.pshow.mvc.SuccessResult;
 import org.pshow.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-@IocBean
-@At("/auth")
+@Controller
+@RequestMapping("/auth")
 public class LoginController {
-	@Inject
+	@Autowired
 	private UserService userService;
 
-	@At
-	public Result login(@Param("..") User user, HttpSession session)
+	@RequestMapping("/login")
+	public Map<String, Object> login(User user, HttpSession session)
 			throws LoginException, RepositoryException {
-		SuccessResult success = new SuccessResult();
-		success.put("user", userService.login(user, session));
-		return success;
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("user", userService.login(user, session));
+		result.put("success", true);
+		return result;
 	}
 
-	@At
-	@Ok("redirect:/index.html")
-	public void logout(HttpSession session) {
+	@RequestMapping("/logout")
+	public void logout(HttpSession session, HttpServletResponse request) {
 		session.invalidate();
+		try {
+			request.sendRedirect("/");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

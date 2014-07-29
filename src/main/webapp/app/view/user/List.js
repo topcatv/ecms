@@ -44,7 +44,7 @@ Ext.define('ECM.view.user.List', {
 			header : '创建日期',
 			dataIndex : 'createDate',
 			xtype:'datecolumn', 
-			format:'Y年m月d日'
+			format:'Y-m-d H:i'
 		}, {
 			header : '是否锁定',
 			dataIndex : 'locked'

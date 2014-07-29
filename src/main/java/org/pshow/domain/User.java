@@ -4,59 +4,58 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.nutz.dao.entity.annotation.ColDefine;
-import org.nutz.dao.entity.annotation.ColType;
-import org.nutz.dao.entity.annotation.Column;
-import org.nutz.dao.entity.annotation.Id;
-import org.nutz.dao.entity.annotation.Index;
-import org.nutz.dao.entity.annotation.ManyMany;
-import org.nutz.dao.entity.annotation.Table;
-import org.nutz.dao.entity.annotation.TableIndexes;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
 
-@Table("ecm_user")
-@TableIndexes({ @Index(name = "idx_user_name", fields = { "name" }, unique = true), @Index(name = "idx_user_openid", fields = { "openid" }, unique = true) })
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+@Entity
+@Table(name="ecm_user")
 public class User implements Serializable {
 
 	private static final long serialVersionUID = -965829144356813385L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Long id;
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 20)
 	private String name;
 	@Column
-	@ColDefine(type = ColType.CHAR, width = 44)
 	private String password;
 	@Column
-	@ColDefine(type = ColType.CHAR, width = 24)
 	private String salt;
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 10)
 	private String sex;
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 64)
 	private String openid;
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 10)
 	private String providerid;
-	@Column("is_locked")
-	@ColDefine(type = ColType.BOOLEAN)
+	@Column(name="is_locked")
 	private boolean locked;
 	@Column
-	@ColDefine(type = ColType.VARCHAR, width = 500)
 	private String description;
-	@Column("create_date")
-	@ColDefine(type = ColType.TIMESTAMP)
+	@Column(name="create_date")
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	private Date createDate;
-	@Column("register_ip")
-	@ColDefine(type = ColType.VARCHAR, width = 15)
+	@Column(name="register_ip")
 	private String registerIp;
-	@ManyMany(target = Role.class, relation = "ecm_user_role", from = "userid", to = "roleid")
+	@ManyToMany(mappedBy="users")//(target = Role.class, relation = "ecm_user_role", from = "userid", to = "roleid")
 	private List<Role> roles;
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(name = "ecm_user_group", joinColumns = { @JoinColumn(name = "userid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "groupid", referencedColumnName = "id") })
+	private List<UserGroup> groups;
 
-	@Column("is_updated")
-	@ColDefine(type = ColType.BOOLEAN)
+	@Column(name="is_updated")
 	private boolean updated;
 
 	public String getProviderid() {

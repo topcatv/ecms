@@ -5,34 +5,32 @@ package org.pshow.controller;
 
 import javax.jcr.RepositoryException;
 
-import org.nutz.ioc.loader.annotation.Inject;
-import org.nutz.ioc.loader.annotation.IocBean;
-import org.nutz.mvc.annotation.At;
-import org.nutz.mvc.annotation.POST;
-import org.pshow.common.page.Pagination;
-import org.pshow.mvc.Result;
-import org.pshow.mvc.SuccessResult;
+import org.pshow.domain.Permission;
 import org.pshow.service.PermissionService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 /**
  * @author Sin
  *
  */
-@IocBean
-@At("/permission")
+@Controller
+@RequestMapping("/permission")
 public class PermissionController {
-	@Inject
+	@Autowired
 	private PermissionService permissionService;
-	
-	@At
-	public Pagination list(Integer pageNumber, int pageSize) {
+
+	@RequestMapping("/list")
+	public Page<Permission> list(Integer pageNumber, int pageSize) {
 		return permissionService.getListByPager(pageNumber, pageSize);
 	}
-	
-	@At("/authorize")
-	@POST
-	public Result authorize(int[] uids, String[] cids, int permission ) throws RepositoryException {
+
+	@RequestMapping(method = RequestMethod.POST, value = "/authorize")
+	public void authorize(int[] uids, String[] cids, int permission)
+			throws RepositoryException {
 		permissionService.authorize(uids, cids, permission);
-		return new SuccessResult();
 	}
 }

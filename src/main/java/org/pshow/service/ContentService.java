@@ -35,14 +35,12 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionManager;
-import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.value.BinaryImpl;
-import org.nutz.ioc.loader.annotation.Inject;
-import org.nutz.ioc.loader.annotation.IocBean;
 import org.pshow.common.CopyCallback;
 import org.pshow.common.CopyProcesser;
 import org.pshow.common.JackrabbitUtils;
@@ -50,21 +48,23 @@ import org.pshow.common.SimpleCharsetDetector;
 import org.pshow.controller.SearchParameter;
 import org.pshow.domain.File;
 import org.pshow.domain.TreeItem;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-@IocBean
+@Service
 public class ContentService {
 
 	private static final MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
-	@Inject
+	@Autowired
 	private PermissionService permissionService;
 
-	public void createFolder(String parent, String name, HttpSession session)
+	public void createFolder(String parent, String name)
 			throws ItemNotFoundException, RepositoryException,
 			ItemExistsException, PathNotFoundException,
 			NoSuchNodeTypeException, LockException, VersionException,
 			ConstraintViolationException, AccessDeniedException,
 			ReferentialIntegrityException, InvalidItemStateException {
-		Session jcrSession = getJcrSession(session);
+		Session jcrSession = getJcrSession();
 		Node parentNode = getNode(parent, jcrSession);
 
 		Node addNode = parentNode.addNode(name, "ps:folder");
@@ -83,10 +83,9 @@ public class ContentService {
 		}
 	}
 
-	public ArrayList<File> getChildrenContent(String parent,
-			HttpSession session, String nodeType) throws RepositoryException,
-			ItemNotFoundException {
-		Session jcrSession = getJcrSession(session);
+	public ArrayList<File> getChildrenContent(String parent, String nodeType)
+			throws RepositoryException, ItemNotFoundException {
+		Session jcrSession = getJcrSession();
 		ArrayList<File> items = new ArrayList<File>();
 		String sql = "";
 		if ("root".equals(parent) || StringUtils.isBlank(parent)) {
@@ -135,10 +134,9 @@ public class ContentService {
 		return item;
 	}
 
-	public ArrayList<TreeItem> getChildrenForTree(String parent,
-			HttpSession session) throws RepositoryException,
+	public ArrayList<TreeItem> getChildrenForTree(String parent) throws RepositoryException,
 			ItemNotFoundException {
-		ArrayList<File> items = getChildrenContent(parent, session, "ps:folder");
+		ArrayList<File> items = getChildrenContent(parent, "ps:folder");
 		ArrayList<TreeItem> treeItems = new ArrayList<TreeItem>();
 		for (File file : items) {
 			TreeItem treeItem = new TreeItem();
@@ -150,19 +148,18 @@ public class ContentService {
 		return treeItems;
 	}
 
-	private Session getJcrSession(HttpSession session) {
-		return JackrabbitUtils.getJcrSessionFromHttpSession(session);
+	private Session getJcrSession() {
+		return JackrabbitUtils.getJcrSessionFromHttpSession();
 	}
 
-	public void createFile(String parent, String fileName, java.io.File file,
-			HttpSession session) throws ItemNotFoundException,
-			RepositoryException, IOException {
+	public void createFile(String parent, String fileName, java.io.File file)
+			throws ItemNotFoundException, RepositoryException, IOException {
 		System.out.println("parent: " + parent);
 		System.out.println("fileName: " + fileName);
 		System.out.println(file.getName());
 		System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 
-		final Session jcrSession = getJcrSession(session);
+		final Session jcrSession = getJcrSession();
 		final VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
 		Node pNode = getNode(parent, jcrSession);
@@ -220,9 +217,9 @@ public class ContentService {
 		return mimeType;
 	}
 
-	public void deteleContent(String[] ids, HttpSession session)
-			throws ItemNotFoundException, RepositoryException {
-		Session jcrSession = getJcrSession(session);
+	public void deteleContent(String[] ids) throws ItemNotFoundException,
+			RepositoryException {
+		Session jcrSession = getJcrSession();
 		if (ids != null && ids.length > 0) {
 			for (String id : ids) {
 				Node node = jcrSession.getNodeByIdentifier(id);
@@ -232,10 +229,9 @@ public class ContentService {
 		}
 	}
 
-	public List<org.pshow.domain.Version> getHistory(String id,
-			HttpSession session) throws ItemNotFoundException,
-			RepositoryException {
-		Session jcrSession = getJcrSession(session);
+	public List<org.pshow.domain.Version> getHistory(String id)
+			throws ItemNotFoundException, RepositoryException {
+		Session jcrSession = getJcrSession();
 		VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
 		Node node = jcrSession.getNodeByIdentifier(id);
@@ -266,10 +262,10 @@ public class ContentService {
 		}
 	}
 
-	public void updateFile(String id, String fileName, java.io.File file,
-			HttpSession session) throws ItemNotFoundException,
-			RepositoryException, FileNotFoundException, IOException {
-		final Session jcrSession = getJcrSession(session);
+	public void updateFile(String id, String fileName, java.io.File file)
+			throws ItemNotFoundException, RepositoryException,
+			FileNotFoundException, IOException {
+		final Session jcrSession = getJcrSession();
 		Node fileNode = getNode(id, jcrSession);
 		final VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
@@ -363,9 +359,9 @@ public class ContentService {
 		fileNode.setProperty("ps:mimeType", mimeType);
 	}
 
-	public void updateFolder(String id, String name, HttpSession session)
+	public void updateFolder(String id, String name)
 			throws ItemNotFoundException, RepositoryException {
-		Session jcrSession = getJcrSession(session);
+		Session jcrSession = getJcrSession();
 		Node folder = jcrSession.getNodeByIdentifier(id);
 		folder.setProperty("ps:name", name);
 		String destAbsPath = folder.getParent().getPath() + "/" + name;
@@ -373,10 +369,9 @@ public class ContentService {
 		jcrSession.save();
 	}
 
-	public ArrayList<File> fullText(String parent, String keywords,
-			HttpSession session) throws ItemNotFoundException,
-			RepositoryException {
-		Session jcrSession = getJcrSession(session);
+	public ArrayList<File> fullText(String parent, String keywords)
+			throws ItemNotFoundException, RepositoryException {
+		Session jcrSession = getJcrSession();
 		ArrayList<File> items = new ArrayList<File>();
 		String sql = "SELECT t.* FROM [nt:hierarchyNode] as t INNER JOIN [nt:resource] AS c ON ISCHILDNODE(c, t) WHERE CONTAINS(t.*, '%s') OR CONTAINS(c.*, '%s')";
 		QueryManager queryManager = jcrSession.getWorkspace().getQueryManager();
@@ -391,32 +386,32 @@ public class ContentService {
 		return items;
 	}
 
-	public void restore(String id, String versionName, HttpSession session)
+	public void restore(String id, String versionName)
 			throws UnsupportedRepositoryOperationException, RepositoryException {
-		Session jcrSession = getJcrSession(session);
+		Session jcrSession = getJcrSession();
 		VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
 		Node node = jcrSession.getNodeByIdentifier(id);
 		versionManager.restore(node.getPath(), versionName, true);
 	}
 
-	public InputStream getStream(String id, HttpSession session)
-			throws ItemNotFoundException, RepositoryException {
-		Node node = getNode(id, getJcrSession(session));
+	public InputStream getStream(String id) throws ItemNotFoundException,
+			RepositoryException {
+		Node node = getNode(id, getJcrSession());
 		Node resource = node.getNode("ps:content");
 		return resource.getProperty(JcrConstants.JCR_DATA).getBinary()
 				.getStream();
 	}
 
-	public File getFile(String id, HttpSession session)
-			throws ItemNotFoundException, RepositoryException {
-		Node node = getNode(id, getJcrSession(session));
+	public File getFile(String id) throws ItemNotFoundException,
+			RepositoryException {
+		Node node = getNode(id, getJcrSession());
 		return convertToFile(node);
 	}
 
-	public File getVersion(String id, String name, HttpSession session)
+	public File getVersion(String id, String name)
 			throws UnsupportedRepositoryOperationException, RepositoryException {
-		Session jcrSession = getJcrSession(session);
+		Session jcrSession = getJcrSession();
 		VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
 		Node node = jcrSession.getNodeByIdentifier(id);
@@ -426,9 +421,9 @@ public class ContentService {
 		return convertToFile(version.getFrozenNode());
 	}
 
-	public ArrayList<File> search(SearchParameter search, HttpSession session)
+	public ArrayList<File> search(SearchParameter search)
 			throws RepositoryException {
-		Session jcrSession = getJcrSession(session);
+		Session jcrSession = getJcrSession();
 		ArrayList<File> items = new ArrayList<File>();
 		String sql = getQueryString(search);
 		System.out.println(sql);
@@ -491,9 +486,9 @@ public class ContentService {
 		return sql;
 	}
 
-	public InputStream getCopy(String id, HttpSession session)
-			throws ItemNotFoundException, RepositoryException {
-		Node node = getNode(id, getJcrSession(session));
+	public InputStream getCopy(String id) throws ItemNotFoundException,
+			RepositoryException {
+		Node node = getNode(id, getJcrSession());
 		Node resNode = node.getNode("ps:copy");
 		return resNode.getProperty(JcrConstants.JCR_DATA).getBinary()
 				.getStream();

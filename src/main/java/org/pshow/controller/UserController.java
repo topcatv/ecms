@@ -1,124 +1,103 @@
 package org.pshow.controller;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import javax.jcr.LoginException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.api.security.user.UserManager;
-import org.apache.shiro.crypto.RandomNumberGenerator;
-import org.apache.shiro.crypto.SecureRandomNumberGenerator;
-import org.apache.shiro.crypto.hash.Sha256Hash;
-import org.nutz.ioc.loader.annotation.Inject;
-import org.nutz.ioc.loader.annotation.IocBean;
-import org.nutz.mvc.annotation.At;
-import org.nutz.mvc.annotation.Param;
 import org.pshow.common.JackrabbitUtils;
-import org.pshow.common.page.Pagination;
 import org.pshow.domain.Role;
 import org.pshow.domain.User;
-import org.pshow.mvc.Result;
-import org.pshow.mvc.SuccessResult;
 import org.pshow.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
-@IocBean
-@At("/user")
+@Controller
+@RequestMapping("/user")
 public class UserController {
+	@InitBinder  
+	public void initBinder(WebDataBinder binder) {  
+	    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");  
+	    dateFormat.setLenient(false);  
+	    binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, true));  
+	} 
 
-	@Inject
+	@Autowired
 	private UserService userService;
-	
-	@At
-	public Pagination list(Long userId, String name, Integer pageNumber, int pageSize) {
-		return userService.listUserByPage(userId, name, pageNumber, pageSize);
+
+	@RequestMapping(value = "/list", method = RequestMethod.GET)
+	public Page<User> list(@RequestParam(defaultValue = "0", required = false)int pageNumber,
+			@RequestParam(defaultValue = "20", required = false) int pageSize) {
+		return userService.listUserByPage(pageNumber, pageSize);
 	}
-	
-	@At
-	public Result create(@Param("..") User user) {
-		userService.save(user);
-		return new SuccessResult();
-	}
-	
-	@At
-	public Result delete(String ids) {
+
+	@RequestMapping(value = "/delete", method = RequestMethod.POST)
+	public void delete(String ids) {
 		userService.delete(ids);
-		return new SuccessResult();
 	}
-	
-	@At
-	public Result lock(String ids) {
+
+	@RequestMapping("/lock")
+	public void lock(String ids) {
 		userService.lock(ids);
-		return new SuccessResult();
 	}
-	
-	@At
-	public Result unlock(String ids) {
+
+	@RequestMapping("/unlock")
+	public void unlock(String ids) {
 		userService.unlock(ids);
-		return new SuccessResult();
 	}
-	
-	@At
-	public Result update(User user) {
+
+	@RequestMapping(method = RequestMethod.PUT)
+	public void update(User user) {
 		userService.update(user);
-		return new SuccessResult();
 	}
-	
-	@At
+
+	@RequestMapping("/getUnselectedRoleList")
 	public List<Role> getUnselectedRoleList(Long userId) {
 		return userService.getUnselectedRoleList(userId);
 	}
-	
-	@At
+
+	@RequestMapping("/getSelectedRoleList")
 	public List<Role> getSelectedRoleList(Long userId) {
 		return userService.getSelectedRoleList(userId);
 	}
-	
-	@At
-	public Result updateRole(Long userId, String addRoleIds, String removeRoleIds) {
+
+	@RequestMapping("/updateRole")
+	public void updateRole(Long userId, String addRoleIds, String removeRoleIds) {
 		userService.updateRole(userId, addRoleIds, removeRoleIds);
-		return new SuccessResult();
 	}
 
-	@At
-	public Map<String, String> regist(final User user) {
-		final Map<String, String> msgs = new Hashtable<String, String>();
-		if (userService.fetchByName(user.getName()) != null) {
-			msgs.put("message",
-					String.format("user '%s' exist", user.getName()));
-			return msgs;
-		}
+	@RequestMapping(method = RequestMethod.POST)
+	public void regist(User user) {
 		try {
-			Session manageSession = JackrabbitUtils.getManageSession();
-			JackrabbitSession jcrSession = (JackrabbitSession) manageSession;
-			UserManager userManager = jcrSession.getUserManager();
-			if (userManager.getAuthorizable(user.getName()) == null) {
-				userManager.createUser(user.getName(), user.getPassword());
-			}
-			manageSession.save();
-			msgs.put("message",
-					String.format("user '%s' registed", user.getName()));
+			userService.regist(user);
+		} catch (LoginException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
 		} catch (RepositoryException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		RandomNumberGenerator rng = new SecureRandomNumberGenerator();
-		String salt = rng.nextBytes().toBase64();
-		String hashedPasswordBase64 = new Sha256Hash(user.getPassword(), salt,
-				1024).toBase64();
-		user.setSalt(salt);
-		user.setPassword(hashedPasswordBase64);
-		userService.insert(user);
-		return msgs;
 	}
 
-	@At
-	public Map<String, String> unregist(final User user) {
+	@RequestMapping("/unregist")
+	public Map<String, String> unregist(User user) {
 
 		final Map<String, String> msgs = new Hashtable<String, String>();
-		userService.delete(userService.fetchByName(user.getName()).getId());
+		userService.delete(user);
 		try {
 			Session manageSession = JackrabbitUtils.getManageSession();
 			JackrabbitSession jsession = (JackrabbitSession) manageSession;

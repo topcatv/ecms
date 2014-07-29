@@ -32,7 +32,6 @@ import org.apache.shiro.authc.pam.AtLeastOneSuccessfulStrategy;
 import org.apache.shiro.authc.pam.AuthenticationStrategy;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.util.CollectionUtils;
-import org.nutz.lang.Lang;
 
 /**
  * {@link AuthenticationStrategy} implementation that only accepts the account
@@ -76,15 +75,15 @@ public class AnySuccessfulStrategy extends AbstractAuthenticationStrategy {
 	public AuthenticationInfo afterAttempt(Realm realm, AuthenticationToken token, AuthenticationInfo singleRealmInfo, AuthenticationInfo aggregateInfo, Throwable t) throws AuthenticationException {
 		if (singleRealmInfo == null) {
 			if (t.getClass().isAssignableFrom(LockedAccountException.class)) {
-				throw Lang.makeThrow(LockedAccountException.class, t.getMessage());
+				throw new  LockedAccountException(t.getMessage());
 			} else if (t.getClass().isAssignableFrom(UnknownAccountException.class)) {
-				throw Lang.makeThrow(UnknownAccountException.class, t.getMessage());
+				throw new UnknownAccountException(t.getMessage());
 			} else if (t.getClass().isAssignableFrom(IncorrectCredentialsException.class)) {
-				throw Lang.makeThrow(IncorrectCredentialsException.class, t.getMessage());
+				throw new  IncorrectCredentialsException(t.getMessage());
 			} else if (t.getClass().isAssignableFrom(ExcessiveAttemptsException.class)) {
-				throw Lang.makeThrow(ExcessiveAttemptsException.class, t.getMessage());
+				throw new  ExcessiveAttemptsException(t.getMessage());
 			}
-			throw Lang.makeThrow(AuthenticationException.class, t.getMessage());
+			throw new  AuthenticationException(t.getMessage());
 		}
 		return super.afterAttempt(realm, token, singleRealmInfo, aggregateInfo, t);
 	}

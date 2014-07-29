@@ -56,7 +56,7 @@ Ext.define('ECM.view.content.ContentGrid', {
 		this.columns = [{
 			dataIndex: 'isFolder',
 			renderer: function(value, metaData, record, row, col, store, gridView){
-                var isFolder = record.get('isFolder');
+                var isFolder = record.get('folder');
                 var mimeType = record.get('mimeType');
                 if(isFolder) {
                 	return '<i class="fa fa-folder"></i>';

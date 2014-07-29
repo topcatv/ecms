@@ -4,15 +4,20 @@ Ext.define('ECM.store.Users', {
 	autoLoad : true,
 	proxy : {
 		type : 'ajax',
+		url : 'user',
+//		headers : { 'Content-Type' : 'application/json; charset=UTF-8' },
+		actionMethods : {
+			create : 'POST',
+			read : 'GET',
+			update : 'PUT',
+			destroy : 'DELETE'
+		},
 		api : {
-			read : 'user/list',
-			update : 'user/update',
-			create : 'user/create'
+			read : 'user/list'
 		},
 		reader : {
 			type : 'json',
-			root : 'list',
-			successProperty : 'success'
+			root : 'page.content'
 		},
 		writer : {
 			encode : true,

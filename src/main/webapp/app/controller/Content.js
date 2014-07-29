@@ -181,7 +181,7 @@ Ext.define('ECM.controller.Content', {
 		searchWin.show();
 	},	
 	detail: function(grid, record){
-		if(record.get("isFolder")){
+		if(record.get("folder")){
 			this.getStore('Content').reload({
 				params : {
 					parent : record.get('id')
@@ -326,7 +326,7 @@ Ext.define('ECM.controller.Content', {
 			Ext.Msg.alert("提示信息", '只能选择一个文档');
 			return;
 		}
-		if(record.get("isFolder")){
+		if(record.get("folder")){
 			var win = this.getUpdateFolderWindow();
 			var form = win.down('form');
 			form.getForm().findField('id').setValue(record.get("id"));
@@ -347,7 +347,7 @@ Ext.define('ECM.controller.Content', {
 			return;
 		}
 		if(ids.length > 0){
-			if(this._getGridSelected()[0].get('isFolder')){
+			if(this._getGridSelected()[0].get('folder')){
 				Ext.Msg.alert("提示信息", '文件夹没有历史');
 				return;
 			}

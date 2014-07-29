@@ -1,6 +1,6 @@
 /* user */
-INSERT INTO ecm_user(ID,NAME,PASSWORD,SALT,SEX,DESCRIPTION,IS_LOCKED,CREATE_DATE,REGISTER_IP,OPENID,PROVIDERID) VALUES 
-(1,'admin',NULL,NULL,0,'超级管理员',false,'2014-02-01 00:12:40','127.0.0.1','admin','local');
+INSERT INTO ecm_user(ID,NAME,PASSWORD,SALT,SEX,DESCRIPTION,IS_LOCKED,CREATE_DATE,REGISTER_IP,OPENID,PROVIDERID,IS_UPDATED) VALUES 
+(1,'admin','k7rz+tsDob6fgmeLJAoxi+ZI2dyW4iPI3/i0SodixyI=','rInQvLE0W9ASbkgdx0id3A==',0,'超级管理员',false,'2014-02-01 00:12:40','127.0.0.1','admin','local',false);
 /*  .role   		*/
 INSERT INTO ecm_role(ID,NAME,DESCRIPTION) VALUES
 (1,'admin','超级管理员：拥有全部权限的角色'),
@@ -9,7 +9,7 @@ INSERT INTO ecm_role(ID,NAME,DESCRIPTION) VALUES
 (4,'user-admin','用户管理员：拥有对用户的浏览、增加和编辑(不包括删除)权限的角色'),
 (5,'security-admin','安全管理员：拥有对角色和权限的任意操作，对用户分配角色及对角色分配权限的权限');
 /*  .permission   		*/
-INSERT INTO ecm_permission VALUES 
+INSERT INTO ecm_permission(ID,NAME,DESCRIPTION,IS_LOCKED) VALUES 
 (1,'*:*:*','全部权限',true),
 (2,'admin:role','对用户分配角色 ',false),
 (3,'admin:setting','系统设置 ',false),

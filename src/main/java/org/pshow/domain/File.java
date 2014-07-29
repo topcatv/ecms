@@ -3,6 +3,9 @@ package org.pshow.domain;
 import java.io.InputStream;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class File {
 
 	private String id;
@@ -10,8 +13,11 @@ public class File {
 	private String name;
 	private String mimeType;
 	private long size;
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	private Date created;
+	@JsonIgnore
 	private InputStream stream;
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	private Date lastModified;
 	private String creator;
 	private String lastModifiedBy;

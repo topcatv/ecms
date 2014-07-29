@@ -15,18 +15,18 @@ import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
 
-import org.nutz.ioc.loader.annotation.IocBean;
-import org.nutz.mvc.annotation.At;
 import org.pshow.common.JackrabbitUtils;
 import org.pshow.domain.Namespace;
 import org.pshow.domain.PropertyDef;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-@IocBean
-@At("/jcrmanage")
+@Controller
+@RequestMapping("/jcrmanage")
 public class JCRManageController {
 
 	@SuppressWarnings("unchecked")
-	@At
+	@RequestMapping("/registNodeType")
 	public void registNodeType(String nodeTypeName, List<PropertyDef> properties) throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException, RepositoryException{
 		Session manageSession = JackrabbitUtils.getManageSession();
 		
@@ -54,7 +54,7 @@ public class JCRManageController {
 		manageSession.save();
 	}
 	
-	@At
+	@RequestMapping("/registNamespace")
 	public void registNamespace(Namespace namespace) throws AccessDeniedException, NamespaceException, UnsupportedRepositoryOperationException, RepositoryException{
 		Session manageSession = JackrabbitUtils.getManageSession();
 		NamespaceRegistry namespaceRegistry = manageSession.getWorkspace().getNamespaceRegistry();

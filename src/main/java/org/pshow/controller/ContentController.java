@@ -6,166 +6,151 @@ package org.pshow.controller;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.nutz.ioc.loader.annotation.Inject;
-import org.nutz.ioc.loader.annotation.IocBean;
-import org.nutz.mvc.annotation.AdaptBy;
-import org.nutz.mvc.annotation.At;
-import org.nutz.mvc.annotation.GET;
-import org.nutz.mvc.annotation.Ok;
-import org.nutz.mvc.annotation.POST;
-import org.nutz.mvc.annotation.PUT;
-import org.nutz.mvc.annotation.Param;
-import org.nutz.mvc.upload.UploadAdaptor;
 import org.pshow.domain.File;
 import org.pshow.domain.TreeItem;
 import org.pshow.domain.Version;
-import org.pshow.mvc.Result;
-import org.pshow.mvc.SuccessResult;
 import org.pshow.service.ContentService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @author topcat
  *
  */
-@IocBean
-@At("/content")
+@Controller
+@RequestMapping("/content")
 public class ContentController {
-	@Inject
+	@Autowired
 	private ContentService contentService;
 
-	@At("/tree")
-	public Result getChildrenContentForTree(String parent, HttpSession session)
+	@RequestMapping("/tree")
+	public ModelMap getChildrenContentForTree(String parent)
 			throws RepositoryException {
-		ArrayList<TreeItem> treeItems = contentService.getChildrenForTree(
-				parent, session);
-		SuccessResult success = new SuccessResult();
-		success.put("folders", treeItems);
-		return success;
+		ArrayList<TreeItem> treeItems = contentService
+				.getChildrenForTree(parent);
+		return new ModelMap("folders", treeItems);
 	}
 
-	@At("/children")
-	public Result getChildrenContent(String parent, HttpSession session)
+	@RequestMapping("/children")
+	public ModelMap getChildrenContent(String parent)
 			throws RepositoryException {
 		ArrayList<File> items = contentService.getChildrenContent(parent,
-				session, NodeType.NT_HIERARCHY_NODE);
-		SuccessResult success = new SuccessResult();
-		success.put("children", items);
-		return success;
+				NodeType.NT_HIERARCHY_NODE);
+		return new ModelMap("children", items);
 	}
 
-	@At("/folder")
-	@POST
-	public Result createFolder(String parent, String name, HttpSession session)
+	@RequestMapping(value = "/folder", method = RequestMethod.POST)
+	public ModelMap createFolder(String parent, String name)
 			throws ItemNotFoundException, RepositoryException {
-		contentService.createFolder(parent, name, session);
-		return new SuccessResult();
+		contentService.createFolder(parent, name);
+		return new ModelMap("success", true);
 	}
 
-	@At("/folder")
-	@PUT
-	public Result updateFolder(String id, String name, HttpSession session)
+	@RequestMapping(value = "/folder", method = RequestMethod.PUT)
+	public ModelMap updateFolder(String id, String name)
 			throws ItemNotFoundException, RepositoryException {
-		contentService.updateFolder(id, name, session);
-		return new SuccessResult();
+		contentService.updateFolder(id, name);
+		return new ModelMap("success", true);
 	}
 
-	@At("/file")
-	@POST
-	@AdaptBy(type = UploadAdaptor.class, args = { "c:/temp" })
-	public Result createOrUpdateFile(String parent, String id, String fileName,
-			@Param("file") java.io.File file, HttpSession session)
+	@RequestMapping(value = "/file", method = RequestMethod.POST)
+	public ModelMap createOrUpdateFile(String parent, String id,
+			String fileName, @RequestParam MultipartFile file)
 			throws ItemNotFoundException, RepositoryException, IOException {
-		if (StringUtils.isNotBlank(id)) {
-			contentService.updateFile(id, fileName, file, session);
-		} else {
-			contentService.createFile(parent, fileName, file, session);
+		java.io.File temp = null;
+		if (!file.isEmpty()) {
+			temp = java.io.File.createTempFile("ecm_upload", "."
+					+ FilenameUtils.getExtension(file.getOriginalFilename()));
+			file.transferTo(temp);
 		}
-		return new SuccessResult();
+		if (StringUtils.isNotBlank(id)) {
+			contentService.updateFile(id, fileName, temp);
+		} else {
+			contentService.createFile(parent, fileName, temp);
+		}
+		return new ModelMap("success", true);
 	}
 
-	@At("/delete")
-	@PUT
-	public Result deleteContent(String[] ids, HttpSession session)
+	@RequestMapping(value = "/delete", method = RequestMethod.PUT)
+	public void deleteContent(String[] ids) throws ItemNotFoundException,
+			RepositoryException, IOException {
+		contentService.deteleContent(ids);
+	}
+
+	@RequestMapping(value = "/history", method = RequestMethod.GET)
+	public Map<String, List<Version>> getHistory(String id)
 			throws ItemNotFoundException, RepositoryException, IOException {
-		contentService.deteleContent(ids, session);
-		return new SuccessResult();
+		List<Version> history = contentService.getHistory(id);
+		Map<String, List<Version>> resutl = new HashMap<String, List<Version>>();
+		resutl.put("history", history);
+		return resutl;
 	}
 
-	@At("/history")
-	@GET
-	public Result getHistory(String id, HttpSession session)
+	@RequestMapping(value = "/version", method = RequestMethod.GET)
+	public Map<String, File> getVersion(String id, String versionName)
 			throws ItemNotFoundException, RepositoryException, IOException {
-		List<Version> history = contentService.getHistory(id, session);
-		SuccessResult success = new SuccessResult();
-		success.put("history", history);
-		return success;
+		File f = contentService.getVersion(id, versionName);
+		Map<String, File> resutl = new HashMap<String, File>();
+		resutl.put("file", f);
+		return resutl;
 	}
 
-	@At("/version")
-	@GET
-	public Result getVersion(String id, String versionName, HttpSession session)
-			throws ItemNotFoundException, RepositoryException, IOException {
-		File f = contentService.getVersion(id, versionName, session);
-		SuccessResult success = new SuccessResult();
-		success.put("file", f);
-		return success;
-	}
-
-	@At("/full_text")
-	@GET
-	public Result fullText(String parent, String keywords, HttpSession session)
+	@RequestMapping(value = "/full_text", method = RequestMethod.GET)
+	public Map<String, List<File>> fullText(String parent, String keywords)
 			throws ItemNotFoundException, RepositoryException {
-		ArrayList<File> items = contentService.fullText(parent, keywords,
-				session);
-		SuccessResult success = new SuccessResult();
-		success.put("children", items);
-		return success;
+		ArrayList<File> items = contentService.fullText(parent, keywords);
+		Map<String, List<File>> resutl = new HashMap<String, List<File>>();
+		resutl.put("children", items);
+		return resutl;
 	}
 
-	@At("/search")
-	@GET
-	public Result search(@Param("..") SearchParameter param, HttpSession session)
-			throws ItemNotFoundException, RepositoryException {
-		ArrayList<File> items = contentService.search(param, session);
-		SuccessResult success = new SuccessResult();
-		success.put("children", items);
-		return success;
+	@RequestMapping(value = "/search")
+	public ModelMap search(SearchParameter param) throws ItemNotFoundException,
+			RepositoryException {
+		ArrayList<File> items = contentService.search(param);
+		return new ModelMap("children", items);
 	}
 
-	@At("/restore")
-	@POST
-	public Result restore(String id, String versionName, HttpSession session)
+	@RequestMapping(value = "/restore", method = RequestMethod.POST)
+	public void restore(String id, String versionName)
 			throws ItemNotFoundException, RepositoryException, IOException {
-		contentService.restore(id, versionName, session);
-		SuccessResult success = new SuccessResult();
-		return success;
+		contentService.restore(id, versionName);
 	}
 
-	@At("/stream")
-	@GET
-	@Ok("raw:stream")
-	public InputStream getStream(String id, boolean isCopy,
-			HttpSession session, HttpServletResponse response)
-			throws ItemNotFoundException, RepositoryException {
+	@RequestMapping(value = "/stream")
+	public void getStream(String id, boolean isCopy,
+			HttpServletResponse response) throws ItemNotFoundException,
+			RepositoryException, IOException {
 		if (isCopy) {
-			InputStream stream = contentService.getCopy(id, session);
+			InputStream stream = contentService.getCopy(id);
 			response.setContentType("application/pdf");
 			response.setCharacterEncoding("utf8");
-			return stream;
+			ServletOutputStream outputStream = response.getOutputStream();
+			IOUtils.copy(stream, outputStream);
 		} else {
-			File f = contentService.getFile(id, session);
+			File f = contentService.getFile(id);
 			response.setContentType(f.getMimeType());
 			response.setCharacterEncoding(f.getEncoding());
-			return f.getStream();
+			ServletOutputStream outputStream = response.getOutputStream();
+			IOUtils.copy(f.getStream(), outputStream);
 		}
 	}
 

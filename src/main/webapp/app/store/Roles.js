@@ -11,8 +11,7 @@ Ext.define('ECM.store.Roles', {
 		},
 		reader : {
 			type : 'json',
-			root : 'list',
-			successProperty : 'success'
+			root : 'page.content'
 		},
 		writer : {
 			encode : true,
