@@ -99,6 +99,8 @@
 		<!-- 设置上传文件的最大尺寸为1MB -->
 		<!-- <property name="maxUploadSize"> <value>1048576</value> </property> -->
 	</bean>
+	
+	<bean id="handlerExceptionResolver" class="org.pshow.common.JsonHandlerMethodExceptionResolver" />
 
 	<!-- 容器默认的DefaultServletHandler处理 所有静态内容与无RequestMapping处理的URL -->
 	<mvc:default-servlet-handler />

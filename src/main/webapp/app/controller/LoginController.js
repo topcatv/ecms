@@ -55,7 +55,7 @@ Ext.define('ECM.controller.LoginController', {
 					var result = Ext.decode(action.response.responseText);
 					Ext.Msg.show({
 						title : '提示信息',
-						msg : result.data,
+						msg : result.message,
 						minWidth : 200,
 						modal : true,
 						buttons : Ext.Msg.OK
@@ -87,7 +87,7 @@ Ext.define('ECM.controller.LoginController', {
 						var result = Ext.decode(action.response.responseText);
 						Ext.Msg.show({
 							title : '提示信息',
-							msg : result.data,
+							msg : result.message,
 							minWidth : 200,
 							modal : true,
 							buttons : Ext.Msg.OK

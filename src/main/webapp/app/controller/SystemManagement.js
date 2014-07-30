@@ -95,7 +95,7 @@ Ext.define('ECM.controller.SystemManagement', {
 		    	var result = Ext.decode(response.responseText);
 		        console.log('server-side failure with status code ' + response.status);
 		        if (myMask != undefined){ myMask.hide();}
-		        Ext.Msg.alert("提示信息",result.data);
+		        Ext.Msg.alert("提示信息",result.message);
 		    }
 		});
 	},

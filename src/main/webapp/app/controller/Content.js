@@ -147,7 +147,7 @@ Ext.define('ECM.controller.Content', {
 		    	var result = Ext.decode(response.responseText);
 		        console.log('server-side failure with status code ' + response.status);
 		        if (myMask != undefined){ myMask.hide();}
-		        Ext.Msg.alert("提示信息",result.data);
+		        Ext.Msg.alert("提示信息",result.message);
 		    }
 		});
 	},
@@ -172,7 +172,13 @@ Ext.define('ECM.controller.Content', {
 			},
 			failure : function(f, action) {
 				var result = Ext.decode(action.response.responseText);
-				Ext.Msg.alert("提示信息",result.data);
+				if(result.children){
+					win.hide();
+					content_store.removeAll();
+					content_store.add(result.children);
+				}else{
+					Ext.Msg.alert("提示信息",result.message);
+				}
 			}
 		});
 	},
@@ -211,7 +217,7 @@ Ext.define('ECM.controller.Content', {
 			failure: function(response, opts) {
 				var result = Ext.decode(response.responseText);
 				console.log('server-side failure with status code ' + response.status);
-				Ext.Msg.alert("提示信息",result.data);
+				Ext.Msg.alert("提示信息",result.message);
 			}
 		});
 	},
@@ -245,7 +251,7 @@ Ext.define('ECM.controller.Content', {
 				    	var result = Ext.decode(response.responseText);
 				        console.log('server-side failure with status code ' + response.status);
 				        if (myMask != undefined){ myMask.hide();}
-				        Ext.Msg.alert("提示信息",result.data);
+				        Ext.Msg.alert("提示信息",result.message);
 				    }
 				});
 			}
@@ -285,7 +291,7 @@ Ext.define('ECM.controller.Content', {
 			},
 			failure : function(f, action) {
 				var result = Ext.decode(action.response.responseText);
-				Ext.Msg.alert("提示信息",result.data);
+				Ext.Msg.alert("提示信息",result.message);
 			}
 		});
 	},
@@ -312,7 +318,7 @@ Ext.define('ECM.controller.Content', {
 			},
 			failure : function(f, action) {
 				var result = Ext.decode(action.response.responseText);
-				Ext.Msg.alert("提示信息",result.data);
+				Ext.Msg.alert("提示信息",result.message);
 			}
 		});
 	},
@@ -392,7 +398,7 @@ Ext.define('ECM.controller.Content', {
 				},
 				failure : function(f, action) {
 					var result = Ext.decode(action.response.responseText);
-					Ext.Msg.alert("提示信息",result.data);
+					Ext.Msg.alert("提示信息",result.message);
 				}
 			});
 		}
@@ -424,7 +430,7 @@ Ext.define('ECM.controller.Content', {
 			},
 			failure : function(f, action) {
 				var result = Ext.decode(action.response.responseText);
-				Ext.Msg.alert("提示信息",result.data);
+				Ext.Msg.alert("提示信息",result.message);
 			}
 		});
 	},
@@ -464,7 +470,7 @@ Ext.define('ECM.controller.Content', {
 				    	var result = Ext.decode(response.responseText);
 				        console.log('server-side failure with status code ' + response.status);
 				        if (myMask != undefined){ myMask.hide();}
-				        Ext.Msg.alert("提示信息",result.data);
+				        Ext.Msg.alert("提示信息",result.message);
 				    }
 				});
 			}

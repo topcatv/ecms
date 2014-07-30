@@ -79,7 +79,7 @@ Ext.define('ECM.controller.Users', {
 					}else{
 						Ext.Msg.show({
 							title : '提示信息',
-							msg : result.data,
+							msg : result.message,
 							minWidth : 200,
 							modal : true,
 							buttons : Ext.Msg.OK
@@ -252,7 +252,7 @@ Ext.define('ECM.controller.Users', {
 					win.hide();
 					_this.getUsersStore().load();
 				}else{
-					Ext.Msg.alert("提示信息",result.data);
+					Ext.Msg.alert("提示信息",result.message);
 				}
 			}
 		});
