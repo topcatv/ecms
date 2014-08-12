@@ -324,14 +324,14 @@ public class ContentService {
 						Session jcrSession = loginToJcr(user);
 						Node fileNode = jcrSession.getNodeByIdentifier(cid);
 						Node resNode = null;
+						VersionManager versionManager = jcrSession
+								.getWorkspace().getVersionManager();
+						versionManager.checkout(fileNode.getPath());
 						if (fileNode.hasNode("ps:copy")) {
 							resNode = fileNode.getNode("ps:copy");
 						} else {
 							resNode = fileNode.addNode("ps:copy", NodeType.NT_RESOURCE);
 						}
-						VersionManager versionManager = jcrSession
-								.getWorkspace().getVersionManager();
-						versionManager.checkout(fileNode.getPath());
 						fillResourceNode(new java.io.File(output), null,
 								"application/pdf", resNode);
 						jcrSession.save();
