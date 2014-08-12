@@ -5,6 +5,7 @@ package org.pshow.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -150,6 +151,8 @@ public class ContentController {
 			File f = contentService.getFile(id);
 			response.setContentType(f.getMimeType());
 			response.setCharacterEncoding(f.getEncoding());
+			String filename = f.getName()+"."+f.getSuffix();
+			response.setHeader("Content-disposition", "attachment; filename="+URLEncoder.encode(filename,"utf-8"));
 			ServletOutputStream outputStream = response.getOutputStream();
 			IOUtils.copy(f.getStream(), outputStream);
 		}

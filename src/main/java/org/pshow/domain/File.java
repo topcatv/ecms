@@ -22,6 +22,7 @@ public class File {
 	private String creator;
 	private String lastModifiedBy;
 	private String encoding;
+	private String suffix;
 
 	public String getName() {
 		return name;
@@ -109,5 +110,13 @@ public class File {
 
 	public void setEncoding(String encoding) {
 		this.encoding = encoding;
+	}
+
+	public String getSuffix() {
+		return suffix;
+	}
+
+	public void setSuffix(String suffix) {
+		this.suffix = suffix;
 	}
 }

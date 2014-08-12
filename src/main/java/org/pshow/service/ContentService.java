@@ -38,9 +38,9 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionManager;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
@@ -403,6 +403,7 @@ public class ContentService {
 		fileNode.setProperty("ps:size", file.length());
 		fileNode.setProperty("ps:name", fileName);
 		fileNode.setProperty("ps:mimeType", mimeType);
+		fileNode.setProperty("ps:suffix", FilenameUtils.getExtension(file.getName()));
 	}
 
 	public void updateFolder(String id, String name)

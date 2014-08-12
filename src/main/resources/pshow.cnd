@@ -3,6 +3,7 @@
   + ps:copy (nt:base)
   - ps:size (long)
   - ps:name (string) mandatory
+  - ps:suffix (string)
   - ps:mimeType (string)
   - ps:encoding (string)
 [ps:folder] > nt:hierarchyNode, mix:lastModified
