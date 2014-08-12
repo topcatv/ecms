@@ -327,7 +327,7 @@ public class ContentService {
 						if (fileNode.hasNode("ps:copy")) {
 							resNode = fileNode.getNode("ps:copy");
 						} else {
-							resNode = fileNode.addNode("ps:copy");
+							resNode = fileNode.addNode("ps:copy", NodeType.NT_RESOURCE);
 						}
 						VersionManager versionManager = jcrSession
 								.getWorkspace().getVersionManager();
