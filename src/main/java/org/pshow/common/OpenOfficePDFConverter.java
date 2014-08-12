@@ -65,7 +65,7 @@ public class OpenOfficePDFConverter implements PDFConverter {
 		OfficeDocumentConverter converter = new OfficeDocumentConverter(
 				officeManager);
 		converter.convert(inputFile, new File(pdfFile));
-		// stopService();
+		stopService();
 		System.out.println();
 	}
 }

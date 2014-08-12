@@ -129,6 +129,7 @@ public class ContentService {
 			item.setStream(nextNode.getNode("ps:content")
 					.getProperty(JcrConstants.JCR_DATA).getBinary().getStream());
 			item.setEncoding(nextNode.getProperty("ps:encoding").getString());
+			item.setSuffix(nextNode.getProperty("ps:suffix").getString());
 		}
 		item.setCreated(nextNode.getProperty(JcrConstants.JCR_CREATED)
 				.getDate().getTime());
