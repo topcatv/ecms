@@ -14,12 +14,15 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
+import javax.jcr.LoginException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.ReferentialIntegrityException;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFormatException;
 import javax.jcr.lock.LockException;
@@ -36,10 +39,12 @@ import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionManager;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
+import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.value.BinaryImpl;
 import org.pshow.common.CopyCallback;
 import org.pshow.common.CopyProcesser;
@@ -48,6 +53,7 @@ import org.pshow.common.SimpleCharsetDetector;
 import org.pshow.controller.SearchParameter;
 import org.pshow.domain.File;
 import org.pshow.domain.TreeItem;
+import org.pshow.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -134,8 +140,8 @@ public class ContentService {
 		return item;
 	}
 
-	public ArrayList<TreeItem> getChildrenForTree(String parent) throws RepositoryException,
-			ItemNotFoundException {
+	public ArrayList<TreeItem> getChildrenForTree(String parent)
+			throws RepositoryException, ItemNotFoundException {
 		ArrayList<File> items = getChildrenContent(parent, "ps:folder");
 		ArrayList<TreeItem> treeItems = new ArrayList<TreeItem>();
 		for (File file : items) {
@@ -152,15 +158,16 @@ public class ContentService {
 		return JackrabbitUtils.getJcrSessionFromHttpSession();
 	}
 
-	public void createFile(String parent, String fileName, java.io.File file)
-			throws ItemNotFoundException, RepositoryException, IOException {
+	public void createFile(String parent, String fileName, java.io.File file,
+			HttpSession session) throws ItemNotFoundException,
+			RepositoryException, IOException {
 		System.out.println("parent: " + parent);
 		System.out.println("fileName: " + fileName);
 		System.out.println(file.getName());
 		System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 
-		final Session jcrSession = getJcrSession();
-		final VersionManager versionManager = jcrSession.getWorkspace()
+		Session jcrSession = getJcrSession();
+		VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
 		Node pNode = getNode(parent, jcrSession);
 		Node fileNode = pNode.addNode(fileName, "ps:file");
@@ -177,17 +184,21 @@ public class ContentService {
 		jcrSession.save();
 		versionManager.checkpoint(fileNode.getPath());
 		if (mimeType.indexOf("ms") != -1) {
+			final User user = (User) session.getAttribute("d_user");
 			CopyCallback callback = new CopyCallback() {
 
 				@Override
 				public void execute(String cid, String output) {
 					try {
+						Session jcrSession = loginToJcr(user);
 						Node fileNode = jcrSession.getNodeByIdentifier(cid);
 						Node resNode = fileNode.addNode("ps:copy",
 								NodeType.NT_RESOURCE);
 						fillResourceNode(new java.io.File(output), null,
 								"application/pdf", resNode);
 						jcrSession.save();
+						VersionManager versionManager = jcrSession
+								.getWorkspace().getVersionManager();
 						versionManager.checkpoint(fileNode.getPath());
 					} catch (ItemNotFoundException e) {
 						e.printStackTrace();
@@ -199,6 +210,17 @@ public class ContentService {
 						e.printStackTrace();
 					}
 
+				}
+
+				private Session loginToJcr(User user) throws LoginException,
+						RepositoryException {
+					Repository repository = JcrUtils.getRepository();
+					Session session = repository.login(new SimpleCredentials(
+							user.getName(),
+							"admin".equals(user.getName()) ? "admin"
+									.toCharArray() : user.getPassword()
+									.toCharArray()));
+					return session;
 				}
 			};
 			new Thread(new CopyProcesser(callback, file,
@@ -262,12 +284,12 @@ public class ContentService {
 		}
 	}
 
-	public void updateFile(String id, String fileName, java.io.File file)
-			throws ItemNotFoundException, RepositoryException,
-			FileNotFoundException, IOException {
-		final Session jcrSession = getJcrSession();
+	public void updateFile(String id, String fileName, java.io.File file,
+			HttpSession session) throws ItemNotFoundException,
+			RepositoryException, FileNotFoundException, IOException {
+		Session jcrSession = getJcrSession();
 		Node fileNode = getNode(id, jcrSession);
-		final VersionManager versionManager = jcrSession.getWorkspace()
+		VersionManager versionManager = jcrSession.getWorkspace()
 				.getVersionManager();
 		if (!fileNode.isNodeType(NodeType.MIX_VERSIONABLE)) {
 			fileNode.addMixin(NodeType.MIX_VERSIONABLE);
@@ -293,11 +315,13 @@ public class ContentService {
 		jcrSession.save();
 		versionManager.checkin(fileNode.getPath());
 		if (file != null && file.exists() && mimeType.indexOf("ms") != -1) {
+			final User user = (User) session.getAttribute("d_user");
 			CopyCallback callback = new CopyCallback() {
 
 				@Override
 				public void execute(String cid, String output) {
 					try {
+						Session jcrSession = loginToJcr(user);
 						Node fileNode = jcrSession.getNodeByIdentifier(cid);
 						Node resNode = null;
 						if (fileNode.hasNode("ps:copy")) {
@@ -305,6 +329,8 @@ public class ContentService {
 						} else {
 							resNode = fileNode.addNode("ps:copy");
 						}
+						VersionManager versionManager = jcrSession
+								.getWorkspace().getVersionManager();
 						versionManager.checkout(fileNode.getPath());
 						fillResourceNode(new java.io.File(output), null,
 								"application/pdf", resNode);
@@ -319,7 +345,17 @@ public class ContentService {
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
+				}
 
+				private Session loginToJcr(User user) throws LoginException,
+						RepositoryException {
+					Repository repository = JcrUtils.getRepository();
+					Session session = repository.login(new SimpleCredentials(
+							user.getName(),
+							"admin".equals(user.getName()) ? "admin"
+									.toCharArray() : user.getPassword()
+									.toCharArray()));
+					return session;
 				}
 			};
 			new Thread(new CopyProcesser(callback, file,

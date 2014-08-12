@@ -15,6 +15,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -73,7 +74,7 @@ public class ContentController {
 
 	@RequestMapping(value = "/file", method = RequestMethod.POST)
 	public ModelMap createOrUpdateFile(String parent, String id,
-			String fileName, @RequestParam MultipartFile file)
+			String fileName, @RequestParam MultipartFile file, HttpSession session)
 			throws ItemNotFoundException, RepositoryException, IOException {
 		java.io.File temp = null;
 		if (!file.isEmpty()) {
@@ -82,9 +83,9 @@ public class ContentController {
 			file.transferTo(temp);
 		}
 		if (StringUtils.isNotBlank(id)) {
-			contentService.updateFile(id, fileName, temp);
+			contentService.updateFile(id, fileName, temp, session);
 		} else {
-			contentService.createFile(parent, fileName, temp);
+			contentService.createFile(parent, fileName, temp, session);
 		}
 		return new ModelMap("success", true);
 	}
