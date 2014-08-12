@@ -189,8 +189,9 @@ public class ContentService {
 
 				@Override
 				public void execute(String cid, String output) {
+					Session jcrSession = null;
 					try {
-						Session jcrSession = loginToJcr(user);
+						jcrSession = loginToJcr(user);
 						Node fileNode = jcrSession.getNodeByIdentifier(cid);
 						Node resNode = fileNode.addNode("ps:copy",
 								NodeType.NT_RESOURCE);
@@ -208,6 +209,10 @@ public class ContentService {
 						e.printStackTrace();
 					} catch (IOException e) {
 						e.printStackTrace();
+					} finally {
+						if(jcrSession != null){
+							jcrSession.logout();
+						}
 					}
 
 				}
@@ -320,8 +325,9 @@ public class ContentService {
 
 				@Override
 				public void execute(String cid, String output) {
+					Session jcrSession = null;
 					try {
-						Session jcrSession = loginToJcr(user);
+						jcrSession = loginToJcr(user);
 						Node fileNode = jcrSession.getNodeByIdentifier(cid);
 						Node resNode = null;
 						VersionManager versionManager = jcrSession
@@ -344,6 +350,10 @@ public class ContentService {
 						e.printStackTrace();
 					} catch (IOException e) {
 						e.printStackTrace();
+					} finally {
+						if(jcrSession != null){
+							jcrSession.logout();
+						}
 					}
 				}
 
