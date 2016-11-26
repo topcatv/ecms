@@ -6,3 +6,6 @@ target
 /jackrabbit
 /.apt_generated
 .factorypath
+.idea
+ecm.iml
+.DS_Store

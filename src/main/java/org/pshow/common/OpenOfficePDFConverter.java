@@ -9,7 +9,7 @@ import org.artofsolving.jodconverter.office.OfficeManager;
 public class OpenOfficePDFConverter implements PDFConverter {
 
 	private static OfficeManager officeManager;
-	private static String office_home = "C:/software/LibreOfficePortable/App/libreoffice/";
+	private static String office_home = "/Applications/LibreOffice.app/Contents/";
 
 	private static int port[] = { 8100 };
 
@@ -23,7 +23,7 @@ public class OpenOfficePDFConverter implements PDFConverter {
 
 	public static void main(String[] args) {
 		OpenOfficePDFConverter openOfficePDFConverter = new OpenOfficePDFConverter();
-		openOfficePDFConverter.convert2PDF("C:\\快盘\\jt.docx");
+		openOfficePDFConverter.convert2PDF("/Users/topcat/Downloads/刘宗莲android开发2年.doc");
 	}
 
 	public void convert2PDF(String inputFile) {
